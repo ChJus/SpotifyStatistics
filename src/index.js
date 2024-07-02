@@ -8,22 +8,27 @@ i2 = atob(i2);
 const serialize = (value) => JSON.stringify(value, stringifyReplacer);
 const deserialize = (text) => JSON.parse(text, parseReviver);
 
-document.querySelector("#download").addEventListener("click",  download);
-document.querySelector("#download").disabled = true;
+document.querySelector("#download").addEventListener("click", download);
+document.querySelector("#download").style.display = "none";
+document.querySelector("#tab-all").focus();
 
 if (localStorage.hasOwnProperty("data")) {
   processedData = deserialize(localStorage.getItem("data"));
-  document.querySelector("#download").disabled = false;
+  document.querySelector("#download").style.display = "inline-block";
 }
 
-document.querySelector("#file").accept = "application/json";
+document.querySelector("#file").accept = "application/json,text/plain";
 document.querySelector("#file").addEventListener("change", async (e) => {
   let file = e.target.files.item(0);
   let text = await file.text();
-  await readData(text);
-  processedData = await summaryStatistics(data);
-  localStorage.setItem("data", serialize(processedData));
-  document.querySelector("#download").disabled = false;
+  if (file.type === "application/json") {
+    await readData(text);
+    processedData = await summaryStatistics(data);
+  } else {
+    processedData = deserialize(text);
+  }
+  localStorage.setItem("data", text);
+  document.querySelector("#download").style.display = "inline-block";
 });
 
 async function readData(text) {
@@ -94,7 +99,13 @@ async function summaryStatistics(data) {
       }
       for (let iter = 0; iter < track["artists"].length; iter++) {
         if (!result.artistStats.has(track["artists"][iter]["name"])) {
-          result.artistStats.set(track["artists"][iter]["name"], {name: track["artists"][iter]["name"], msPlayed: 0, songs: new Set(), streams: 0, streamHistory: []});
+          result.artistStats.set(track["artists"][iter]["name"], {
+            name: track["artists"][iter]["name"],
+            msPlayed: 0,
+            songs: new Set(),
+            streams: 0,
+            streamHistory: []
+          });
         }
         s.artists.add(track["artists"][iter]["name"]);
         result.artistStats.get(track["artists"][iter]["name"]).songs.add(s.internalID);
@@ -177,7 +188,7 @@ async function summaryStatistics(data) {
         track.tempo = req[j]["tempo"];
         track.time_signature = req[j]["time_signature"];
         track.valence = req[j]["valence"];
-        result.songStats.set(songIDList[i+j], track);
+        result.songStats.set(songIDList[i + j], track);
       }
     });
     await sleep(1000 / QUERY_RATE_PER_SECOND);
@@ -192,7 +203,7 @@ async function summaryStatistics(data) {
   result.activeDays = new Set(data.map(d => approximateDate(d))).size;
   result.accountAge = Math.round((result.endDate - result.startDate) / (1000.0 * 3600.0 * 24.0));
 
-  document.querySelector("#download").style.display = "none";
+  document.querySelector("#progress-container").style.display = "none";
   return result;
 }
 
@@ -262,12 +273,12 @@ function stringifyReplacer(key, value) {
   if (typeof value === "object" && value !== null) {
     if (value instanceof Map) {
       return {
-        _meta: { type: "map" },
+        _meta: {type: "map"},
         value: Array.from(value.entries()),
       };
     } else if (value instanceof Set) {
       return {
-        _meta: { type: "set" },
+        _meta: {type: "set"},
         value: Array.from(value.values()),
       };
     } else if ("_meta" in value) {

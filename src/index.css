@@ -1,7 +1,132 @@
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
-    Arial, sans-serif;
-  margin: auto;
-  max-width: 38rem;
-  padding: 2rem;
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap');
+
+
+:root {
+    --background-color: rgb(20, 20, 20);
+    --foreground-color: rgb(250, 250, 250);
+    --accent: rgb(186, 140, 24);
 }
+
+body {
+    background-color: var(--background-color);
+    color: var(--foreground-color);
+    font-family: "DM Sans", -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    margin: auto;
+    width: 80vw;
+    padding: 3rem;
+}
+
+#profile {
+    display: flex;
+    justify-content: space-evenly;
+    margin: 4rem 2rem;
+
+    #profile-left {
+        max-width: 200px;
+        max-height: 200px;
+        width: 20vw;
+        height: 20vw;
+        position: relative;
+        overflow: hidden;
+        border-radius: 50%;
+        background-color: var(--foreground-color);
+        margin: auto 40px;
+        vertical-align: center;
+    }
+
+    #profile-right {
+        width: 50%;
+
+        #file-label:hover {
+            border-color: white;
+            background-color: var(--background-color);
+            color: var(--foreground-color);
+            filter: drop-shadow(6px 12px 4px rgba(255, 255, 255, 0.2));
+        }
+
+        #file-label {
+            border: 2px solid var(--foreground-color);
+            border-radius: 5px;
+            color: var(--background-color);
+            background-color: var(--foreground-color);
+            font-weight: 700;
+            font-size: 10pt;
+            display: inline-block;
+            padding: 8px 16px;
+            margin: 20px 20px 20px 0;
+            cursor: pointer;
+            transition: color 300ms, background-color 300ms, border 300ms, filter 300ms;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        a {
+            text-decoration: none;
+            border-bottom: 1px solid var(--foreground-color);
+            transition: font-weight 300ms;
+        }
+
+        a:hover {
+            cursor: pointer;
+            font-weight: 700;
+        }
+
+        #progress-container {
+            display: flex;
+            justify-content: space-evenly;
+            flex-wrap: wrap;
+        }
+
+        #progress-label {
+            text-align: center;
+            width: clamp(250px, 10vw, 400px);
+            display: block;
+            margin: auto;
+            padding: 10px;
+        }
+
+        #progress {
+            accent-color: var(--foreground-color);
+            display: block;
+            margin: auto;
+        }
+    }
+}
+
+#settings {
+    display: inline-block;
+    width: 100%;
+    margin: 1rem auto;
+
+    button {
+        float: left;
+        outline: none;
+        border: 2px solid var(--foreground-color);
+        color: var(--background-color);
+        background-color: var(--foreground-color);
+        font-weight: 700;
+        font-size: 10pt;
+        display: inline-block;
+        padding: 12px 16px;
+        margin: 0;
+        cursor: pointer;
+        transition: color 300ms, background-color 300ms, border 300ms, filter 300ms;
+    }
+
+    button:hover {
+        border-color: white;
+        background-color: var(--background-color);
+        color: var(--foreground-color);
+        filter: drop-shadow(6px 12px 4px rgba(255, 255, 255, 0.2));
+    }
+
+    button.active {
+        border-color: white;
+        background-color: var(--background-color);
+        color: var(--foreground-color);
+        filter: drop-shadow(6px 12px 4px rgba(255, 255, 255, 0.2));
+    }
+}
+
