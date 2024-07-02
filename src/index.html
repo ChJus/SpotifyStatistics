@@ -8,10 +8,11 @@
     <link rel="stylesheet" href="index.css" />
   </head>
   <body>
-  <button id="send">Send requests</button>
-  <button id="stop">Stop sending requests</button>
+  <label for="file">Upload data:</label>
+  <input type="file" id="file" name="file">
+
   <button id="download">Save an offline copy</button>
-  <div id="progress-container">
+  <div id="progress-container" style="display: none">
     <label for="progress" id="progress-label"></label>
     <progress id="progress"></progress>
   </div>

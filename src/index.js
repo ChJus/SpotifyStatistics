@@ -1,37 +1,41 @@
 let b = true;
 let QUERY_RATE_PER_SECOND = 10.0;
-let processedData;
+let processedData, data;
 let i1 = "ZjdiMzIzNGUzYjllNDJmMTg0ZjkxYmU0MWRhZDA0NDg=", i2 = "NjkyNmY0MzYyMDYyNDRjNTg3MTIzNzc3MDkyNjY3MGU="
 i1 = atob(i1);
 i2 = atob(i2);
 
-document.querySelector("#send").addEventListener("click", async () => {
-  processedData = await summaryStatistics(data);
-  localStorage.setItem("data", serialize(processedData));
-});
-
-document.querySelector("#download").addEventListener("click",  () => {
-  download();
-});
-
-document.querySelector("#progress-container").style.display = "none";
-
-document.querySelector("#stop").addEventListener("click", (e) => stop());
 const serialize = (value) => JSON.stringify(value, stringifyReplacer);
 const deserialize = (text) => JSON.parse(text, parseReviver);
 
+document.querySelector("#download").addEventListener("click",  download);
+document.querySelector("#download").disabled = true;
+
 if (localStorage.hasOwnProperty("data")) {
   processedData = deserialize(localStorage.getItem("data"));
+  document.querySelector("#download").disabled = false;
 }
 
-let data = await d3.json("Spotify_Data/StreamingHistory0.json");
-for (let i = 0; i < data.length; i++) {
-  data[i].endTime = new Date(data[i].endTime);
-}
+document.querySelector("#file").accept = "application/json";
+document.querySelector("#file").addEventListener("change", async (e) => {
+  let file = e.target.files.item(0);
+  let text = await file.text();
+  await readData(text);
+  processedData = await summaryStatistics(data);
+  localStorage.setItem("data", serialize(processedData));
+  document.querySelector("#download").disabled = false;
+});
 
-for (let i = data.length - 1; i >= 0; i--) {
-  if (data[i].msPlayed < 30000) {
-    data.splice(i, 1);
+async function readData(text) {
+  data = await JSON.parse(text);
+  for (let i = 0; i < data.length; i++) {
+    data[i].endTime = new Date(data[i].endTime);
+  }
+
+  for (let i = data.length - 1; i >= 0; i--) {
+    if (data[i].msPlayed < 30000) {
+      data.splice(i, 1);
+    }
   }
 }
 
@@ -140,7 +144,6 @@ async function summaryStatistics(data) {
 
     let artists = [...temp.artists];
     for (let k = 0; k < artists.length; k++) {
-      console.log(artists[k])
       temp = result.artistStats.get(artists[k]);
       if (temp === undefined) continue;
       temp.msPlayed += e.msPlayed;
@@ -189,6 +192,7 @@ async function summaryStatistics(data) {
   result.activeDays = new Set(data.map(d => approximateDate(d))).size;
   result.accountAge = Math.round((result.endDate - result.startDate) / (1000.0 * 3600.0 * 24.0));
 
+  document.querySelector("#download").style.display = "none";
   return result;
 }
 
@@ -261,13 +265,12 @@ function stringifyReplacer(key, value) {
         _meta: { type: "map" },
         value: Array.from(value.entries()),
       };
-    } else if (value instanceof Set) { // bonus feature!
+    } else if (value instanceof Set) {
       return {
         _meta: { type: "set" },
         value: Array.from(value.values()),
       };
     } else if ("_meta" in value) {
-      // Escape "_meta" properties
       return {
         ...value,
         _meta: {
@@ -288,7 +291,6 @@ function parseReviver(key, value) {
       } else if (value._meta.type === "set") {
         return new Set(value.value);
       } else if (value._meta.type === "escaped-meta") {
-        // Un-escape the "_meta" property
         return {
           ...value,
           _meta: value._meta.value,
