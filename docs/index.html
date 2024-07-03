@@ -1,71 +1,71 @@
 <!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8"/>
-    <title>StatsforSpotify</title>
-    <script src="d3.js"></script>
-    <script src="FileSaver.js"></script>
-    <link rel="stylesheet" href="index.css"/>
+  <meta charset="UTF-8"/>
+  <title>StatsforSpotify</title>
+  <script src="d3.js"></script>
+  <script src="FileSaver.js"></script>
+  <link rel="stylesheet" href="index.css"/>
 </head>
 <body>
 <div id="popup-upload">
-    <div id="popup-wrapper">
-        <div id="popup-icon">
-            <img src="assets/upload.svg" alt=""/>
-        </div>
-        <div id="popup-field">
-            <label id="popup-file-label" for="popup-file">Upload</label>
-            <input type="file" id="popup-file" name="popup-file">
-            <div id="popup-progress-container" style="display: none">
-                <label for="progress" id="popup-progress-label"></label>
-                <progress id="popup-progress"></progress>
-            </div>
-        </div>
+  <div id="popup-wrapper">
+    <div id="popup-icon">
+      <img src="assets/upload.svg" alt=""/>
     </div>
+    <div id="popup-field">
+      <label id="popup-file-label" for="popup-file">Upload</label>
+      <input type="file" id="popup-file" name="popup-file">
+      <div id="popup-progress-container" style="display: none">
+        <label for="progress" id="popup-progress-label"></label>
+        <progress id="popup-progress"></progress>
+      </div>
+    </div>
+  </div>
 </div>
 
 <div id="profile">
-    <div id="profile-left">
-        <img src="" alt="" id="pfp">
-    </div>
-    <div id="profile-right">
-        <h1 id="name">NAME</h1>
-        <h2 id="lifespan">DATE — DATE</h2>
-        <div id="options">
-            <label id="file-label" for="file">Upload</label>
-            <input type="file" id="file" name="file">
+  <div id="profile-left">
+    <img src="" alt="" id="pfp">
+  </div>
+  <div id="profile-right">
+    <h1 id="name">NAME</h1>
+    <h2 id="lifespan">DATE — DATE</h2>
+    <div id="options">
+      <label id="file-label" for="file">Upload</label>
+      <input type="file" id="file" name="file">
 
-            <a id="download">Save an offline copy</a>
-            <div id="progress-container" style="display: none">
-                <label for="progress" id="progress-label"></label>
-                <progress id="progress"></progress>
-            </div>
-        </div>
+      <a id="download">Save an offline copy</a>
+      <div id="progress-container" style="display: none">
+        <label for="progress" id="progress-label"></label>
+        <progress id="progress"></progress>
+      </div>
     </div>
+  </div>
 </div>
 <div id="settings">
-    <button class="tab active" id="tab-all">All</button>
-    <button class="tab" id="tab-1y">1Y</button>
-    <button class="tab" id="tab-6m">6M</button>
-    <button class="tab" id="tab-3m">3M</button>
-    <button class="tab" id="tab-ytd">YTD</button>
-    <button class="tab" id="tab-mtd">MTD</button>
+  <button class="tab active" id="tab-all">All</button>
+  <button class="tab" id="tab-1y">1Y</button>
+  <button class="tab" id="tab-6m">6M</button>
+  <button class="tab" id="tab-3m">3M</button>
+  <button class="tab" id="tab-ytd">YTD</button>
+  <button class="tab" id="tab-mtd">MTD</button>
 </div>
 <div id="overall">
-    <div>__ minutes</div>
-    <div>__ streams</div>
-    <div>__ songs</div>
-    <div>__ artists</div>
-    <div>__ / __ days</div>
-    <div>__ avg. session time</div>
+  <div>__ minutes</div>
+  <div>__ streams</div>
+  <div>__ songs</div>
+  <div>__ artists</div>
+  <div>__ / __ days</div>
+  <div>__ avg. session time</div>
 </div>
 <div id="favorites">
-    <div>
-        <h3>Top artists</h3>
-    </div>
-    <div>
-        <h3>Top songs</h3>
-    </div>
+  <div>
+    <h3>Top artists</h3>
+  </div>
+  <div>
+    <h3>Top songs</h3>
+  </div>
 </div>
 </body>
 <script type="module" src="index.js"></script>
