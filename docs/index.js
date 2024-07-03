@@ -260,18 +260,54 @@ async function summaryStatistics(data) {
 
 function refreshDashboard(d, dateMin, dateMax) {
   // todo: see if can find way to efficiently find unique songs in range of time
+  // todo: serialize with short field names, consider converting all ms to minutes
   // todo: handle case where storage overflows 5MB.
+  // todo: allow sort by streams / time
+  // todo: tabs to switch between feature (top artists/songs, graphs)
   let data = structuredClone(d);
   let min = new Date(approximateDate(new Date(dateMin))), max = new Date(approximateDate(new Date(dateMax)));
   let dateFormat = {year: 'numeric', month: 'long', day: 'numeric'};
   document.querySelector("#profile-right #lifespan").innerText = new Date(dateMin).toLocaleDateString("en-US", dateFormat) + " — " + new Date(dateMax).toLocaleDateString("en-US", dateFormat);
-  console.log([...data.history.values()])
+
   document.querySelector("#overall #overall-minutes").innerText = commafy(Math.round(([...data.history.values()][getLaterDate([...data.history.keys()], max)].msPlayed - [...data.history.values()][getEarlierDate([...data.history.keys()], min)].msPlayed) / 1000.0 / 60.0));
   document.querySelector("#overall #overall-streams").innerText = commafy([...data.history.values()][getLaterDate([...data.history.keys()], max)].streams - [...data.history.values()][getEarlierDate([...data.history.keys()], min)].streams);
   document.querySelector("#overall #overall-songs").innerText = commafy([...data.uniqueSongs.values()][getLaterDate([...data.uniqueSongs.keys()], max)].count - [...data.uniqueSongs.values()][getEarlierDate([...data.uniqueSongs.keys()], min)].count);
   document.querySelector("#overall #overall-artists").innerText = commafy([...data.uniqueArtists.values()][getLaterDate([...data.uniqueArtists.keys()], max)].count - [...data.uniqueArtists.values()][getEarlierDate([...data.uniqueArtists.keys()], min)].count);
   document.querySelector("#overall #overall-days").innerText = `${commafy(getLaterDate([...data.activeDays], max) - getEarlierDate([...data.activeDays], min))} / ${commafy(Math.round((max - min) / (1000.0 * 3600.0 * 24.0)))}`;
   document.querySelector("#overall #overall-avg-session").innerText = `${commafy(Math.ceil(parseFloat(document.querySelector("#overall #overall-minutes").innerText.replaceAll(",", "")) / (getLaterDate([...data.activeDays], max) - getEarlierDate([...data.activeDays], min))))}`;
+
+  let sortedArtists = [...data.artistStats.values()].toSorted((a, b) => {
+    return b.streams - a.streams
+  });
+  let sortedSongs = [...data.songStats.values()].toSorted((a, b) => {
+    return b.streams - a.streams
+  });
+
+  let templateArtists = document.querySelector("#favorites-artists-row-template").content;
+  let templateSongs = document.querySelector("#favorites-songs-row-template").content;
+  for (let i = 0; i < 50; i++) {
+    templateArtists.querySelectorAll("tr td")[0].innerText = `${(i + 1)}`;
+    templateArtists.querySelector(".img-div img").src = `${sortedArtists[i].image !== null ? sortedArtists[i].image : ''}`;
+    templateArtists.querySelector(".text-main").innerText = `${sortedArtists[i].name}`;
+    templateArtists.querySelector(".text-sub").innerText = `${commafy(sortedArtists[i].streams)} streams | ${commafy(Math.round(sortedArtists[i].msPlayed / 1000.0 / 60.0))} minutes`;
+
+    let item = document.importNode(templateArtists.querySelector("tr"), true);
+    item.addEventListener("click", () => moreInfo("artist", sortedArtists[i].name));
+    document.querySelector("#favorites-artists-table").appendChild(item);
+
+    templateSongs.querySelectorAll("tr td")[0].innerText = `${(i + 1)}`;
+    templateSongs.querySelector(".img-div img").src = `${sortedSongs[i].image !== null ? sortedSongs[i].image : ''}`;
+    templateSongs.querySelector(".text-main").innerText = `${sortedSongs[i].trackName}`;
+    templateSongs.querySelector(".text-sub").innerText = `${commafy(sortedSongs[i].streams)} streams | ${commafy(Math.round(sortedSongs[i].msPlayed / 1000.0 / 60.0))} minutes`;
+
+    item = document.importNode(templateSongs.querySelector("tr"), true);
+    item.addEventListener("click", () => moreInfo("song", sortedSongs[i].internalID));
+    document.querySelector("#favorites-songs-table").appendChild(item);
+  }
+}
+
+function moreInfo(type, id) {
+  console.log(type, id)
 }
 
 function commafy(x) {
