@@ -4,7 +4,12 @@
 :root {
     --background-color: rgb(20, 20, 20);
     --foreground-color: rgb(250, 250, 250);
-    --accent: rgb(186, 140, 24);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
 body {
@@ -13,7 +18,95 @@ body {
     font-family: "DM Sans", -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     margin: auto;
     width: 80vw;
+    height: 100vh;
     padding: 3rem;
+    position: relative;
+    display: block;
+}
+
+#popup-upload {
+    left: 0;
+    top: 0;
+    display: flex;
+    justify-content: center;
+    position: fixed;
+    padding: 30px;
+    z-index: 1000;
+    width: 100vw;
+    height: 100vh;
+    opacity: 1;
+    background-color: var(--background-color);
+
+    #popup-wrapper {
+        margin: auto;
+        display: block;
+        width: fit-content;
+        height: fit-content;
+    }
+
+    #popup-icon {
+        margin: auto;
+        width: 40vw;
+        height: 20vw;
+    }
+
+    #popup-icon img {
+        width: 40vw;
+        height: 20vw;
+        opacity: 0.5;
+        position: absolute;
+    }
+
+    #popup-field {
+        margin: auto;
+        width: min-content;
+    }
+
+    #popup-file-label:hover {
+        border-color: white;
+        background-color: var(--background-color);
+        color: var(--foreground-color);
+        filter: drop-shadow(4px 6px 4px rgba(255, 255, 255, 0.3));
+    }
+
+    #popup-file-label {
+        border: 2px solid var(--foreground-color);
+        border-radius: 5px;
+        color: var(--background-color);
+        background-color: var(--foreground-color);
+        font-weight: 700;
+        font-size: 10pt;
+        display: block;
+        padding: 8px 16px;
+        margin: auto auto;
+        width: min-content;
+        cursor: pointer;
+        transition: color 300ms, background-color 300ms, border 300ms, filter 300ms;
+    }
+
+    #popup-file {
+        display: none;
+    }
+
+    #popup-progress-container {
+        display: flex;
+        justify-content: space-evenly;
+        flex-wrap: wrap;
+    }
+
+    #popup-progress-label {
+        text-align: center;
+        width: clamp(250px, 10vw, 400px);
+        display: block;
+        margin: auto;
+        padding: 30px 10px 10px 10px;
+    }
+
+    #popup-progress {
+        accent-color: var(--foreground-color);
+        display: block;
+        margin: auto;
+    }
 }
 
 #profile {
@@ -41,7 +134,7 @@ body {
             border-color: white;
             background-color: var(--background-color);
             color: var(--foreground-color);
-            filter: drop-shadow(6px 12px 4px rgba(255, 255, 255, 0.2));
+            filter: drop-shadow(4px 6px 4px rgba(255, 255, 255, 0.3));
         }
 
         #file-label {
@@ -119,14 +212,14 @@ body {
         border-color: white;
         background-color: var(--background-color);
         color: var(--foreground-color);
-        filter: drop-shadow(6px 12px 4px rgba(255, 255, 255, 0.2));
+        filter: drop-shadow(4px 6px 4px rgba(255, 255, 255, 0.3));
     }
 
     button.active {
         border-color: white;
         background-color: var(--background-color);
         color: var(--foreground-color);
-        filter: drop-shadow(6px 12px 4px rgba(255, 255, 255, 0.2));
+        filter: drop-shadow(4px 6px 4px rgba(255, 255, 255, 0.3));
     }
 }
 

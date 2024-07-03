@@ -13,9 +13,26 @@ document.querySelector("#download").style.display = "none";
 document.querySelector("#tab-all").focus();
 
 if (localStorage.hasOwnProperty("data")) {
+  document.querySelector("#popup-upload").style.display = "none";
   processedData = deserialize(localStorage.getItem("data"));
   document.querySelector("#download").style.display = "inline-block";
 }
+
+document.querySelector("#popup-file").accept = "application/json,text/plain";
+document.querySelector("#popup-file").addEventListener("change", async (e) => {
+  document.querySelector("#download").style.display = "none";
+  let file = e.target.files.item(0);
+  let text = await file.text();
+  if (file.type === "application/json") {
+    await readData(text);
+    processedData = await summaryStatistics(data);
+  } else {
+    processedData = deserialize(text);
+  }
+  localStorage.setItem("data", text);
+  document.querySelector("#popup-upload").style.display = "none";
+  document.querySelector("#download").style.display = "inline-block";
+});
 
 document.querySelector("#file").accept = "application/json,text/plain";
 document.querySelector("#file").addEventListener("change", async (e) => {
@@ -46,6 +63,7 @@ async function readData(text) {
 
 async function summaryStatistics(data) {
   document.querySelector("#progress-container").style.display = "block";
+  document.querySelector("#popup-progress-container").style.display = "block";
   console.log("Attempting to log in...")
   await login();
 
@@ -76,6 +94,7 @@ async function summaryStatistics(data) {
 
   let counter = 0;
   document.querySelector("#progress").max = result.songStats.size;
+  document.querySelector("#popup-progress").max = result.songStats.size;
   for (let [i, s] of result.songStats) {
     if (!b) {
       break;
@@ -84,6 +103,7 @@ async function summaryStatistics(data) {
       if (JSON.parse(t)["tracks"]["items"].length === 0) {
         result.songStats.delete(i);
         document.querySelector("#progress").max = result.songStats.size;
+        document.querySelector("#popup-progress").max = result.songStats.size;
         counter--;
         return;
       }
@@ -113,12 +133,15 @@ async function summaryStatistics(data) {
       delete s.artistName;
     });
     document.querySelector("#progress").value = ++counter;
+    document.querySelector("#popup-progress").value = counter;
     document.querySelector("#progress-label").innerText = `Importing track ${counter} of ${result.songStats.size}`;
+    document.querySelector("#popup-progress-label").innerText = `Importing track ${counter} of ${result.songStats.size}`;
     await sleep(1000 / QUERY_RATE_PER_SECOND);
   }
 
   counter = 0;
   document.querySelector("#progress").max = result.artistStats.size;
+  document.querySelector("#popup-progress").max = result.artistStats.size;
   for (let [i, a] of result.artistStats) {
     if (!b) {
       break;
@@ -127,6 +150,7 @@ async function summaryStatistics(data) {
       if (JSON.parse(t)["artists"]["items"].length === 0) {
         result.artistStats.delete(i);
         document.querySelector("#progress").max = result.artistStats.size;
+        document.querySelector("#popup-progress").max = result.artistStats.size;
         counter--;
         return;
       }
@@ -140,8 +164,13 @@ async function summaryStatistics(data) {
     });
     document.querySelector("#progress").value = ++counter;
     document.querySelector("#progress-label").innerText = `Importing artist ${counter} of ${result.artistStats.size}`;
+    document.querySelector("#popup-progress").value = counter;
+    document.querySelector("#popup-progress-label").innerText = `Importing artist ${counter} of ${result.artistStats.size}`;
     await sleep(1000 / QUERY_RATE_PER_SECOND);
   }
+
+  document.querySelector("#progress-label").innerText = `Loading...`;
+  document.querySelector("#popup-progress-label").innerText = `Loading...`;
 
   data.forEach((e) => {
     result.totalMinutes += (e.msPlayed / 1000.0 / 60.0);
@@ -204,6 +233,7 @@ async function summaryStatistics(data) {
   result.accountAge = Math.round((result.endDate - result.startDate) / (1000.0 * 3600.0 * 24.0));
 
   document.querySelector("#progress-container").style.display = "none";
+  document.querySelector("#popup-progress-container").style.display = "none";
   return result;
 }
 
