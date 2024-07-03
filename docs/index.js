@@ -11,9 +11,11 @@ const deserialize = (text) => JSON.parse(text, parseReviver);
 document.querySelector("#download").addEventListener("click", download);
 document.querySelector("#download").style.display = "none";
 document.querySelector("#tab-all").focus();
+console.log("Attempting to log in...")
+await login();
 
 if (localStorage.hasOwnProperty("data")) {
-  document.querySelector("#popup-upload").style.display = "none";
+  document.querySelector("#popup-container").style.display = "none";
   processedData = deserialize(localStorage.getItem("data"));
   document.querySelector("#download").style.display = "inline-block";
 }
@@ -30,7 +32,7 @@ document.querySelector("#popup-file").addEventListener("change", async (e) => {
     processedData = deserialize(text);
   }
   localStorage.setItem("data", text);
-  document.querySelector("#popup-upload").style.display = "none";
+  document.querySelector("#popup-container").style.display = "none";
   document.querySelector("#download").style.display = "inline-block";
 });
 
@@ -64,8 +66,6 @@ async function readData(text) {
 async function summaryStatistics(data) {
   document.querySelector("#progress-container").style.display = "block";
   document.querySelector("#popup-progress-container").style.display = "block";
-  console.log("Attempting to log in...")
-  await login();
 
   let result = {
     totalMinutes: 0,
