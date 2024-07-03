@@ -18,6 +18,7 @@ if (localStorage.hasOwnProperty("data")) {
   document.querySelector("#popup-container").style.display = "none";
   processedData = deserialize(localStorage.getItem("data"));
   document.querySelector("#download").style.display = "inline-block";
+  await refreshDashboard(processedData);
 }
 
 document.querySelector("#popup-file").accept = "application/json,text/plain";
@@ -25,13 +26,15 @@ document.querySelector("#popup-file").addEventListener("change", async (e) => {
   document.querySelector("#download").style.display = "none";
   let file = e.target.files.item(0);
   let text = await file.text();
-  if (file.type === "application/json") {
+  if (file.type === "application/json") { // todo: error handling
     await readData(text);
     processedData = await summaryStatistics(data);
+    localStorage.setItem("data", serialize(processedData));
   } else {
     processedData = deserialize(text);
+    localStorage.setItem("data", text);
   }
-  localStorage.setItem("data", text);
+  await refreshDashboard(processedData);
   document.querySelector("#popup-container").style.display = "none";
   document.querySelector("#download").style.display = "inline-block";
 });
@@ -43,10 +46,13 @@ document.querySelector("#file").addEventListener("change", async (e) => {
   if (file.type === "application/json") {
     await readData(text);
     processedData = await summaryStatistics(data);
+    localStorage.setItem("data", serialize(processedData));
   } else {
     processedData = deserialize(text);
+    localStorage.setItem("data", text);
   }
-  localStorage.setItem("data", text);
+
+  await refreshDashboard(processedData);
   document.querySelector("#download").style.display = "inline-block";
 });
 
@@ -235,6 +241,10 @@ async function summaryStatistics(data) {
   document.querySelector("#progress-container").style.display = "none";
   document.querySelector("#popup-progress-container").style.display = "none";
   return result;
+}
+
+function refreshDashboard(d, dateMin, dateMax) {
+
 }
 
 function approximateDate(d) {
