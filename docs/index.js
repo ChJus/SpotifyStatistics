@@ -72,10 +72,12 @@ async function summaryStatistics(data) {
   document.querySelector("#progress-container").style.display = "block";
   document.querySelector("#popup-progress-container").style.display = "block";
 
+  let prevD = new Date(approximateDate(data[0].endTime));
+  prevD.setDate(prevD.getDate() - 1);
   let result = {
-    history: [{date: new Date(approximateDate(data[0].endTime)), msPlayed: 0, streams: 0}],
-    uniqueSongs: new Map([[approximateDate(data[0].endTime), {date: approximateDate(data[0].endTime), count: 0}]]),
-    uniqueArtists: new Map([[approximateDate(data[0].endTime), {date: approximateDate(data[0].endTime), count: 0}]]),
+    history: new Map([[prevD, {date: prevD, msPlayed: 0, streams: 0}]]),
+    uniqueSongs: new Map([[approximateDate(prevD), {date: approximateDate(prevD), count: 0}]]),
+    uniqueArtists: new Map([[approximateDate(prevD), {date: approximateDate(prevD), count: 0}]]),
     artistStats: new Map(),
     songStats: new Map(),
     accountAge: 0, // in days
@@ -202,10 +204,10 @@ async function summaryStatistics(data) {
     delete temp.endTime;
     result.songStats.set(stringHash(e.trackName + e.artistName), temp);
 
-    result.history.push({
+    result.history.set(e.endTime, {
       date: e.endTime,
-      msPlayed: e.msPlayed + result.history[result.history.length - 1].msPlayed,
-      streams: Math.ceil(e.msPlayed / temp.duration) + result.history[result.history.length - 1].streams
+      msPlayed: e.msPlayed + [...result.history.values()][result.history.size - 1].msPlayed,
+      streams: Math.ceil(e.msPlayed / temp.duration) + [...result.history.values()][result.history.size - 1].streams
     });
     let artists = [...temp.artists];
     for (let k = 0; k < artists.length; k++) {
@@ -258,13 +260,33 @@ async function summaryStatistics(data) {
 
 function refreshDashboard(d, dateMin, dateMax) {
   let data = structuredClone(d);
+  let min = new Date(approximateDate(new Date(dateMin))), max = new Date(approximateDate(new Date(dateMax)));
   let dateFormat = {year: 'numeric', month: 'long', day: 'numeric'};
   document.querySelector("#profile-right #lifespan").innerText = new Date(dateMin).toLocaleDateString("en-US", dateFormat) + " — " + new Date(dateMax).toLocaleDateString("en-US", dateFormat);
-  // document.querySelector("#overall #overall-songs").innerText = data.uniqueSongs;
+  console.log([...data.history.values()])
+  document.querySelector("#overall #overall-minutes").innerText = Math.round(([...data.history.values()][getLaterDate([...data.history.keys()], max)].msPlayed - [...data.history.values()][getEarlierDate([...data.history.keys()], min)].msPlayed) / 1000.0 / 60.0);
+  document.querySelector("#overall #overall-streams").innerText = [...data.history.values()][getLaterDate([...data.history.keys()], max)].streams - [...data.history.values()][getEarlierDate([...data.history.keys()], min)].streams;
+  document.querySelector("#overall #overall-songs").innerText = [...data.uniqueSongs.values()][getLaterDate([...data.uniqueSongs.keys()], max)].count - [...data.uniqueSongs.values()][getEarlierDate([...data.uniqueSongs.keys()], min)].count;
+  document.querySelector("#overall #overall-artists").innerText = [...data.uniqueArtists.values()][getLaterDate([...data.uniqueArtists.keys()], max)].count - [...data.uniqueArtists.values()][getEarlierDate([...data.uniqueArtists.keys()], min)].count;
+  document.querySelector("#overall #overall-days").innerText = `${getLaterDate([...data.activeDays], max) - getEarlierDate([...data.activeDays], min)} / ${Math.round((max - min) / (1000.0 * 3600.0 * 24.0))}`;
+  document.querySelector("#overall #overall-avg-session").innerText = `${Math.ceil(parseFloat(document.querySelector("#overall #overall-minutes").innerText) / (getLaterDate([...data.activeDays], max) - getEarlierDate([...data.activeDays], min)))}`;
+}
+
+function getEarlierDate(arr, date) {
+  return arr.findIndex((d) => {
+    return new Date(d) - new Date(date) >= 0
+  }) - 1;
+}
+
+function getLaterDate(arr, date) {
+  let index = arr.findLastIndex((d) => {
+    return new Date(d) - new Date(date) <= 0
+  });
+  return index >= 0 ? index : arr.length - 1;
 }
 
 function approximateDate(d) {
-  return d.getFullYear() + "-" + d.getMonth() + "-" + d.getDate();
+  return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate();
 }
 
 function stringHash(string) {
