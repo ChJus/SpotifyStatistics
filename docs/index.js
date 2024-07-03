@@ -258,12 +258,12 @@ async function summaryStatistics(data) {
   return result;
 }
 
-function refreshDashboard(d, dateMin, dateMax) {
+async function refreshDashboard(d, dateMin, dateMax) {
   // todo: see if can find way to efficiently find unique songs in range of time
   // todo: serialize with short field names, consider converting all ms to minutes
   // todo: handle case where storage overflows 5MB.
-  // todo: allow sort by streams / time
   // todo: tabs to switch between feature (top artists/songs, graphs)
+  //todo: merge stream count with streamhistory array
   let data = structuredClone(d);
   let min = new Date(approximateDate(new Date(dateMin))), max = new Date(approximateDate(new Date(dateMax)));
   let dateFormat = {year: 'numeric', month: 'long', day: 'numeric'};
@@ -276,11 +276,22 @@ function refreshDashboard(d, dateMin, dateMax) {
   document.querySelector("#overall #overall-days").innerText = `${commafy(getLaterDate([...data.activeDays], max) - getEarlierDate([...data.activeDays], min))} / ${commafy(Math.round((max - min) / (1000.0 * 3600.0 * 24.0)))}`;
   document.querySelector("#overall #overall-avg-session").innerText = `${commafy(Math.ceil(parseFloat(document.querySelector("#overall #overall-minutes").innerText.replaceAll(",", "")) / (getLaterDate([...data.activeDays], max) - getEarlierDate([...data.activeDays], min))))}`;
 
+  function getStreamTime(item, min, max) { // todo: push 2-26 to streamHistory
+    let i = item.streamHistory.findIndex((d) => {
+      return new Date(d.date) - new Date(min) >= 0
+    });
+    let j = item.streamHistory.findLastIndex((d) => {
+      return new Date(d.date) - new Date(max) <= 0
+    });
+    j = j >= 0 ? j : item.streamHistory.length - 1;
+    return item.streamHistory[j].msPlayed - item.streamHistory[i].msPlayed;
+  }
+
   let sortedArtists = [...data.artistStats.values()].toSorted((a, b) => {
-    return b.streams - a.streams
+    return getStreamTime(b, min, max) - getStreamTime(a, min, max)
   });
   let sortedSongs = [...data.songStats.values()].toSorted((a, b) => {
-    return b.streams - a.streams
+    return getStreamTime(b, min, max) - getStreamTime(a, min, max)
   });
 
   let templateArtists = document.querySelector("#favorites-artists-row-template").content;
@@ -289,7 +300,7 @@ function refreshDashboard(d, dateMin, dateMax) {
     templateArtists.querySelectorAll("tr td")[0].innerText = `${(i + 1)}`;
     templateArtists.querySelector(".img-div img").src = `${sortedArtists[i].image !== null ? sortedArtists[i].image : ''}`;
     templateArtists.querySelector(".text-main").innerText = `${sortedArtists[i].name}`;
-    templateArtists.querySelector(".text-sub").innerText = `${commafy(sortedArtists[i].streams)} streams | ${commafy(Math.round(sortedArtists[i].msPlayed / 1000.0 / 60.0))} minutes`;
+    templateArtists.querySelector(".text-sub").innerText = `${commafy(Math.round(getStreamTime(sortedArtists[i], min, max) / 1000.0 / 60.0))} minutes | ${commafy(sortedArtists[i].streams)} streams`;
 
     let item = document.importNode(templateArtists.querySelector("tr"), true);
     item.addEventListener("click", () => moreInfo("artist", sortedArtists[i].name));
@@ -298,7 +309,7 @@ function refreshDashboard(d, dateMin, dateMax) {
     templateSongs.querySelectorAll("tr td")[0].innerText = `${(i + 1)}`;
     templateSongs.querySelector(".img-div img").src = `${sortedSongs[i].image !== null ? sortedSongs[i].image : ''}`;
     templateSongs.querySelector(".text-main").innerText = `${sortedSongs[i].trackName}`;
-    templateSongs.querySelector(".text-sub").innerText = `${commafy(sortedSongs[i].streams)} streams | ${commafy(Math.round(sortedSongs[i].msPlayed / 1000.0 / 60.0))} minutes`;
+    templateSongs.querySelector(".text-sub").innerText = `${commafy(Math.round(sortedSongs[i].msPlayed / 1000.0 / 60.0))} minutes | ${commafy(sortedSongs[i].streams)} streams`;
 
     item = document.importNode(templateSongs.querySelector("tr"), true);
     item.addEventListener("click", () => moreInfo("song", sortedSongs[i].internalID));
