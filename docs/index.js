@@ -1,7 +1,7 @@
 let b = true;
 let QUERY_RATE_PER_SECOND = 10.0;
 let processedData, data;
-let i1 = "ZjdiMzIzNGUzYjllNDJmMTg0ZjkxYmU0MWRhZDA0NDg=", i2 = "NjkyNmY0MzYyMDYyNDRjNTg3MTIzNzc3MDkyNjY3MGU="
+let i1 = "NmQyMDhlNGY3NzZiNGMxNmI0ODk2M2NkMTEwZWQwODQ=", i2 = "YWIyMTQ3MGIzN2VkNGFlYmI2NjY4Y2NlMjRmZDQyMDM="
 i1 = atob(i1);
 i2 = atob(i2);
 
@@ -11,14 +11,13 @@ const deserialize = (text) => JSON.parse(text, parseReviver);
 document.querySelector("#download").addEventListener("click", download);
 document.querySelector("#download").style.display = "none";
 document.querySelector("#tab-all").focus();
-console.log("Attempting to log in...")
 await login();
 
 if (localStorage.hasOwnProperty("data")) {
   document.querySelector("#popup-container").style.display = "none";
   processedData = deserialize(localStorage.getItem("data"));
   document.querySelector("#download").style.display = "inline-block";
-  await refreshDashboard(processedData);
+  await refreshDashboard(processedData, processedData.startDate, processedData.endDate);
 }
 
 document.querySelector("#popup-file").accept = "application/json,text/plain";
@@ -34,7 +33,7 @@ document.querySelector("#popup-file").addEventListener("change", async (e) => {
     processedData = deserialize(text);
     localStorage.setItem("data", text);
   }
-  await refreshDashboard(processedData);
+  await refreshDashboard(processedData, processedData.startDate, processedData.endDate);
   document.querySelector("#popup-container").style.display = "none";
   document.querySelector("#download").style.display = "inline-block";
 });
@@ -52,7 +51,7 @@ document.querySelector("#file").addEventListener("change", async (e) => {
     localStorage.setItem("data", text);
   }
 
-  await refreshDashboard(processedData);
+  await refreshDashboard(processedData, processedData.startDate, processedData.endDate);
   document.querySelector("#download").style.display = "inline-block";
 });
 
@@ -74,15 +73,13 @@ async function summaryStatistics(data) {
   document.querySelector("#popup-progress-container").style.display = "block";
 
   let result = {
-    totalMinutes: 0,
-    totalStreams: 0,
-    uniqueSongs: 0,
-    uniqueArtists: 0,
+    history: [{date: new Date(approximateDate(data[0].endTime)), msPlayed: 0, streams: 0}],
+    uniqueSongs: new Map([[approximateDate(data[0].endTime), {date: approximateDate(data[0].endTime), count: 0}]]),
+    uniqueArtists: new Map([[approximateDate(data[0].endTime), {date: approximateDate(data[0].endTime), count: 0}]]),
     artistStats: new Map(),
     songStats: new Map(),
-    averageTime: 0, // in minutes
     accountAge: 0, // in days
-    activeDays: 0,
+    activeDays: [],
     startDate: data[0].endTime,
     endDate: data[data.length - 1].endTime,
   };
@@ -90,10 +87,19 @@ async function summaryStatistics(data) {
   data.forEach((e) => {
     if (!result.songStats.has(stringHash(e.trackName + e.artistName))) {
       let song = structuredClone(e);
+
+      if ([...result.uniqueSongs.values()][result.uniqueSongs.size - 1].date === approximateDate(song.endTime)) {
+        result.uniqueSongs.get(approximateDate(song.endTime)).count++;
+      } else {
+        result.uniqueSongs.set(approximateDate(song.endTime), {
+          date: approximateDate(song.endTime),
+          count: [...result.uniqueSongs.values()][result.uniqueSongs.size - 1].count + 1
+        });
+      }
+
       song.streamHistory = [];
       song.streams = 0;
       song.internalID = stringHash(e.trackName + e.artistName);
-      delete song.endTime;
       result.songStats.set(stringHash(e.trackName + e.artistName), song);
     }
   });
@@ -132,6 +138,15 @@ async function summaryStatistics(data) {
             streams: 0,
             streamHistory: []
           });
+
+          if ([...result.uniqueArtists.values()][result.uniqueArtists.size - 1].date === approximateDate(s.endTime)) {
+            result.uniqueArtists.get(approximateDate(s.endTime)).count++;
+          } else {
+            result.uniqueArtists.set(approximateDate(s.endTime), {
+              date: approximateDate(s.endTime),
+              count: [...result.uniqueArtists.values()][result.uniqueArtists.size - 1].count + 1
+            });
+          }
         }
         s.artists.add(track["artists"][iter]["name"]);
         result.artistStats.get(track["artists"][iter]["name"]).songs.add(s.internalID);
@@ -140,8 +155,8 @@ async function summaryStatistics(data) {
     });
     document.querySelector("#progress").value = ++counter;
     document.querySelector("#popup-progress").value = counter;
-    document.querySelector("#progress-label").innerText = `Importing track ${counter} of ${result.songStats.size}`;
-    document.querySelector("#popup-progress-label").innerText = `Importing track ${counter} of ${result.songStats.size}`;
+    document.querySelector("#progress-label").innerText = `Importing track ${counter} of ${result.songStats.size} [${Math.round(100.0 * counter / result.songStats.size)}%]`;
+    document.querySelector("#popup-progress-label").innerText = `Importing track ${counter} of ${result.songStats.size} [${Math.round(100.0 * counter / result.songStats.size)}%]`;
     await sleep(1000 / QUERY_RATE_PER_SECOND);
   }
 
@@ -169,9 +184,9 @@ async function summaryStatistics(data) {
       }
     });
     document.querySelector("#progress").value = ++counter;
-    document.querySelector("#progress-label").innerText = `Importing artist ${counter} of ${result.artistStats.size}`;
+    document.querySelector("#progress-label").innerText = `Importing artist ${counter} of ${result.artistStats.size} [${Math.round(100.0 * counter / result.artistStats.size)}%]`;
     document.querySelector("#popup-progress").value = counter;
-    document.querySelector("#popup-progress-label").innerText = `Importing artist ${counter} of ${result.artistStats.size}`;
+    document.querySelector("#popup-progress-label").innerText = `Importing artist ${counter} of ${result.artistStats.size} [${Math.round(100.0 * counter / result.artistStats.size)}%]`;
     await sleep(1000 / QUERY_RATE_PER_SECOND);
   }
 
@@ -179,15 +194,19 @@ async function summaryStatistics(data) {
   document.querySelector("#popup-progress-label").innerText = `Loading...`;
 
   data.forEach((e) => {
-    result.totalMinutes += (e.msPlayed / 1000.0 / 60.0);
-
     let temp = result.songStats.get(stringHash(e.trackName + e.artistName));
     if (temp === undefined) return;
     temp.msPlayed += e.msPlayed;
     temp.streams += Math.ceil(e.msPlayed / temp.duration);
     temp.streamHistory.push({date: e.endTime, msPlayed: temp.msPlayed});
+    delete temp.endTime;
     result.songStats.set(stringHash(e.trackName + e.artistName), temp);
 
+    result.history.push({
+      date: e.endTime,
+      msPlayed: e.msPlayed + result.history[result.history.length - 1].msPlayed,
+      streams: Math.ceil(e.msPlayed / temp.duration) + result.history[result.history.length - 1].streams
+    });
     let artists = [...temp.artists];
     for (let k = 0; k < artists.length; k++) {
       temp = result.artistStats.get(artists[k]);
@@ -229,13 +248,7 @@ async function summaryStatistics(data) {
     await sleep(1000 / QUERY_RATE_PER_SECOND);
   }
 
-  result.totalMinutes = Math.round(result.totalMinutes);
-  result.totalStreams = data.length;
-  result.uniqueSongs = result.songStats.size;
-  result.uniqueArtists = result.artistStats.size;
-
-  result.averageTime = Math.round(result.totalMinutes / new Set(data.map(d => approximateDate(d))).size);
-  result.activeDays = new Set(data.map(d => approximateDate(d))).size;
+  result.activeDays = new Set(data.map(d => approximateDate(d.endTime)));
   result.accountAge = Math.round((result.endDate - result.startDate) / (1000.0 * 3600.0 * 24.0));
 
   document.querySelector("#progress-container").style.display = "none";
@@ -244,11 +257,14 @@ async function summaryStatistics(data) {
 }
 
 function refreshDashboard(d, dateMin, dateMax) {
-
+  let data = structuredClone(d);
+  let dateFormat = {year: 'numeric', month: 'long', day: 'numeric'};
+  document.querySelector("#profile-right #lifespan").innerText = new Date(dateMin).toLocaleDateString("en-US", dateFormat) + " — " + new Date(dateMax).toLocaleDateString("en-US", dateFormat);
+  // document.querySelector("#overall #overall-songs").innerText = data.uniqueSongs;
 }
 
 function approximateDate(d) {
-  return d.endTime.getFullYear() + "-" + d.endTime.getMonth() + "-" + d.endTime.getDate();
+  return d.getFullYear() + "-" + d.getMonth() + "-" + d.getDate();
 }
 
 function stringHash(string) {
@@ -291,16 +307,10 @@ function login() {
 
   xmlHttp.onreadystatechange = function () {
     if (xmlHttp.readyState === 4 && xmlHttp.status === 200) {
-      console.log(xmlHttp.responseText);
       localStorage.setItem("token", JSON.parse(xmlHttp.responseText)["access_token"]);
-      console.log("logged in!")
       return true;
     }
   }
-}
-
-function stop() {
-  b = false;
 }
 
 function download() {
