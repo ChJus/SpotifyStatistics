@@ -74,6 +74,9 @@ async function summaryStatistics(data) {
 
   let prevD = new Date(approximateDate(data[0].endTime));
   prevD.setDate(prevD.getDate() - 1);
+
+  let endD = new Date(approximateDate(data[data.length - 1].endTime));
+  endD.setDate(endD.getDate() + 1);
   let result = {
     history: new Map([[prevD, {date: prevD, msPlayed: 0, streams: 0}]]),
     uniqueSongs: new Map([[approximateDate(prevD), {date: approximateDate(prevD), count: 0}]]),
@@ -82,8 +85,8 @@ async function summaryStatistics(data) {
     songStats: new Map(),
     accountAge: 0, // in days
     activeDays: [],
-    startDate: data[0].endTime,
-    endDate: data[data.length - 1].endTime,
+    startDate: prevD,
+    endDate: endD,
   };
 
   data.forEach((e) => {
@@ -99,8 +102,9 @@ async function summaryStatistics(data) {
         });
       }
 
-      song.streamHistory = [];
+      song.msPlayed = 0;
       song.streams = 0;
+      song.streamHistory = [{date: prevD, msPlayed: 0, streams: 0}];
       song.internalID = stringHash(e.trackName + e.artistName);
       result.songStats.set(stringHash(e.trackName + e.artistName), song);
     }
@@ -138,7 +142,7 @@ async function summaryStatistics(data) {
             msPlayed: 0,
             songs: new Set(),
             streams: 0,
-            streamHistory: []
+            streamHistory: [{date: prevD, msPlayed: 0, streams: 0}]
           });
 
           if ([...result.uniqueArtists.values()][result.uniqueArtists.size - 1].date === approximateDate(s.endTime)) {
@@ -200,7 +204,7 @@ async function summaryStatistics(data) {
     if (temp === undefined) return;
     temp.msPlayed += e.msPlayed;
     temp.streams += Math.ceil(e.msPlayed / temp.duration);
-    temp.streamHistory.push({date: e.endTime, msPlayed: temp.msPlayed});
+    temp.streamHistory.push({date: e.endTime, msPlayed: temp.msPlayed, streams: temp.streams});
     delete temp.endTime;
     result.songStats.set(stringHash(e.trackName + e.artistName), temp);
 
@@ -215,7 +219,7 @@ async function summaryStatistics(data) {
       if (temp === undefined) continue;
       temp.msPlayed += e.msPlayed;
       temp.streams += Math.ceil(e.msPlayed / result.songStats.get(stringHash(e.trackName + e.artistName)).duration);
-      temp.streamHistory.push({date: e.endTime, msPlayed: temp.msPlayed});
+      temp.streamHistory.push({date: e.endTime, msPlayed: temp.msPlayed, streams: temp.streams});
 
       result.artistStats.set(artists[k], temp);
     }
@@ -263,7 +267,6 @@ async function refreshDashboard(d, dateMin, dateMax) {
   // todo: serialize with short field names, consider converting all ms to minutes
   // todo: handle case where storage overflows 5MB.
   // todo: tabs to switch between feature (top artists/songs, graphs)
-  //todo: merge stream count with streamhistory array
   let data = structuredClone(d);
   let min = new Date(approximateDate(new Date(dateMin))), max = new Date(approximateDate(new Date(dateMax)));
   let dateFormat = {year: 'numeric', month: 'long', day: 'numeric'};
@@ -276,7 +279,7 @@ async function refreshDashboard(d, dateMin, dateMax) {
   document.querySelector("#overall #overall-days").innerText = `${commafy(getLaterDate([...data.activeDays], max) - getEarlierDate([...data.activeDays], min))} / ${commafy(Math.round((max - min) / (1000.0 * 3600.0 * 24.0)))}`;
   document.querySelector("#overall #overall-avg-session").innerText = `${commafy(Math.ceil(parseFloat(document.querySelector("#overall #overall-minutes").innerText.replaceAll(",", "")) / (getLaterDate([...data.activeDays], max) - getEarlierDate([...data.activeDays], min))))}`;
 
-  function getStreamTime(item, min, max) { // todo: push 2-26 to streamHistory
+  function getStreamStats(item, property, min, max) {
     let i = item.streamHistory.findIndex((d) => {
       return new Date(d.date) - new Date(min) >= 0
     });
@@ -284,23 +287,31 @@ async function refreshDashboard(d, dateMin, dateMax) {
       return new Date(d.date) - new Date(max) <= 0
     });
     j = j >= 0 ? j : item.streamHistory.length - 1;
-    return item.streamHistory[j].msPlayed - item.streamHistory[i].msPlayed;
+    return item.streamHistory[j][property] - item.streamHistory[i][property];
   }
 
   let sortedArtists = [...data.artistStats.values()].toSorted((a, b) => {
-    return getStreamTime(b, min, max) - getStreamTime(a, min, max)
+    return getStreamStats(b, "msPlayed", min, max) - getStreamStats(a, "msPlayed", min, max)
   });
   let sortedSongs = [...data.songStats.values()].toSorted((a, b) => {
-    return getStreamTime(b, min, max) - getStreamTime(a, min, max)
+    return getStreamStats(b, "msPlayed", min, max) - getStreamStats(a, "msPlayed", min, max)
   });
 
   let templateArtists = document.querySelector("#favorites-artists-row-template").content;
   let templateSongs = document.querySelector("#favorites-songs-row-template").content;
+
+  let remove = document.querySelectorAll("#favorites-artists-table > tr");
+  let remove2 = document.querySelectorAll("#favorites-artists-table > tr");
+  for (let i = remove.length - 1; i > 0; i--) {
+    remove[i].parentNode.removeChild(remove[i]);
+    remove2[i].parentNode.removeChild(remove2[i]);
+  }
+
   for (let i = 0; i < 50; i++) {
     templateArtists.querySelectorAll("tr td")[0].innerText = `${(i + 1)}`;
     templateArtists.querySelector(".img-div img").src = `${sortedArtists[i].image !== null ? sortedArtists[i].image : ''}`;
     templateArtists.querySelector(".text-main").innerText = `${sortedArtists[i].name}`;
-    templateArtists.querySelector(".text-sub").innerText = `${commafy(Math.round(getStreamTime(sortedArtists[i], min, max) / 1000.0 / 60.0))} minutes | ${commafy(sortedArtists[i].streams)} streams`;
+    templateArtists.querySelector(".text-sub").innerText = `${commafy(Math.round(getStreamStats(sortedArtists[i], "msPlayed", min, max) / 1000.0 / 60.0))} minutes | ${commafy(getStreamStats(sortedArtists[i], "streams", min, max))} streams`;
 
     let item = document.importNode(templateArtists.querySelector("tr"), true);
     item.addEventListener("click", () => moreInfo("artist", sortedArtists[i].name));
@@ -328,7 +339,7 @@ function commafy(x) {
 function getEarlierDate(arr, date) {
   return arr.findIndex((d) => {
     return new Date(d) - new Date(date) >= 0
-  }) - 1;
+  });
 }
 
 function getLaterDate(arr, date) {
