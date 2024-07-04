@@ -10,7 +10,48 @@ const deserialize = (text) => JSON.parse(text, parseReviver);
 
 document.querySelector("#download").addEventListener("click", download);
 document.querySelector("#download").style.display = "none";
-document.querySelector("#tab-all").focus();
+
+document.querySelectorAll("#settings button").forEach(button => {
+  button.addEventListener("click", async (e) => {
+    document.querySelectorAll("#settings button").forEach(button => {
+      button.classList.remove("active");
+    });
+    e.target.classList.add("active");
+    let option = e.target.id.split("-")[1];
+    let sd, ed;
+    switch (option) {
+      case "all":
+        sd = processedData.startDate;
+        ed = processedData.endDate;
+        break;
+      case "1y":
+        sd = new Date(processedData.endDate);
+        sd.setDate(sd.getDate() - 365);
+        ed = processedData.endDate;
+        break;
+      case "6m":
+        sd = new Date(processedData.endDate);
+        sd.setDate(sd.getDate() - 180);
+        ed = processedData.endDate;
+        break;
+      case "3m":
+        sd = new Date(processedData.endDate);
+        sd.setDate(sd.getDate() - 90);
+        ed = processedData.endDate;
+        break;
+      case "ytd":
+        sd = new Date(`${new Date(processedData.endDate).getFullYear()}-1-1`);
+        ed = processedData.endDate;
+        break;
+      case "mtd":
+        sd = new Date(`${new Date(processedData.endDate).getFullYear()}-${new Date(processedData.endDate).getMonth() + 1}-1`);
+        ed = processedData.endDate;
+        break;
+    }
+    await refreshDashboard(processedData, sd, ed);
+  })
+})
+
 await login();
 
 if (localStorage.hasOwnProperty("data")) {
@@ -270,19 +311,24 @@ async function refreshDashboard(d, dateMin, dateMax) {
   let data = structuredClone(d);
   let min = new Date(approximateDate(new Date(dateMin))), max = new Date(approximateDate(new Date(dateMax)));
   let dateFormat = {year: 'numeric', month: 'long', day: 'numeric'};
-  document.querySelector("#profile-right #lifespan").innerText = new Date(dateMin).toLocaleDateString("en-US", dateFormat) + " — " + new Date(dateMax).toLocaleDateString("en-US", dateFormat);
+
+  let born = new Date(dateMax), upTo = new Date(dateMax);
+  born.setDate(born.getDate() - data.accountAge + 1);
+  upTo.setDate(upTo.getDate() - 1)
+  document.querySelector("#profile-right #lifespan").innerText = born.toLocaleDateString("en-US", dateFormat) + " — " + upTo.toLocaleDateString("en-US", dateFormat);
 
   document.querySelector("#overall #overall-minutes").innerText = commafy(Math.round(([...data.history.values()][getLaterDate([...data.history.keys()], max)].msPlayed - [...data.history.values()][getEarlierDate([...data.history.keys()], min)].msPlayed) / 1000.0 / 60.0));
   document.querySelector("#overall #overall-streams").innerText = commafy([...data.history.values()][getLaterDate([...data.history.keys()], max)].streams - [...data.history.values()][getEarlierDate([...data.history.keys()], min)].streams);
   document.querySelector("#overall #overall-songs").innerText = commafy([...data.uniqueSongs.values()][getLaterDate([...data.uniqueSongs.keys()], max)].count - [...data.uniqueSongs.values()][getEarlierDate([...data.uniqueSongs.keys()], min)].count);
   document.querySelector("#overall #overall-artists").innerText = commafy([...data.uniqueArtists.values()][getLaterDate([...data.uniqueArtists.keys()], max)].count - [...data.uniqueArtists.values()][getEarlierDate([...data.uniqueArtists.keys()], min)].count);
-  document.querySelector("#overall #overall-days").innerText = `${commafy(getLaterDate([...data.activeDays], max) - getEarlierDate([...data.activeDays], min))} / ${commafy(Math.round((max - min) / (1000.0 * 3600.0 * 24.0)))}`;
+  document.querySelector("#overall #overall-days").innerText = `${commafy(getLaterDate([...data.activeDays], max) - getEarlierDate([...data.activeDays], min))} / ${commafy(Math.min(data.accountAge, Math.round((max - min) / (1000.0 * 3600.0 * 24.0))))}`;
   document.querySelector("#overall #overall-avg-session").innerText = `${commafy(Math.ceil(parseFloat(document.querySelector("#overall #overall-minutes").innerText.replaceAll(",", "")) / (getLaterDate([...data.activeDays], max) - getEarlierDate([...data.activeDays], min))))}`;
 
   function getStreamStats(item, property, min, max) {
     let i = item.streamHistory.findIndex((d) => {
       return new Date(d.date) - new Date(min) >= 0
     });
+    i = i >= 0 ? i : 0;
     let j = item.streamHistory.findLastIndex((d) => {
       return new Date(d.date) - new Date(max) <= 0
     });
@@ -301,8 +347,8 @@ async function refreshDashboard(d, dateMin, dateMax) {
   let templateSongs = document.querySelector("#favorites-songs-row-template").content;
 
   let remove = document.querySelectorAll("#favorites-artists-table > tr");
-  let remove2 = document.querySelectorAll("#favorites-artists-table > tr");
-  for (let i = remove.length - 1; i > 0; i--) {
+  let remove2 = document.querySelectorAll("#favorites-songs-table > tr");
+  for (let i = remove.length - 1; i >= 0; i--) {
     remove[i].parentNode.removeChild(remove[i]);
     remove2[i].parentNode.removeChild(remove2[i]);
   }
@@ -320,7 +366,7 @@ async function refreshDashboard(d, dateMin, dateMax) {
     templateSongs.querySelectorAll("tr td")[0].innerText = `${(i + 1)}`;
     templateSongs.querySelector(".img-div img").src = `${sortedSongs[i].image !== null ? sortedSongs[i].image : ''}`;
     templateSongs.querySelector(".text-main").innerText = `${sortedSongs[i].trackName}`;
-    templateSongs.querySelector(".text-sub").innerText = `${commafy(Math.round(sortedSongs[i].msPlayed / 1000.0 / 60.0))} minutes | ${commafy(sortedSongs[i].streams)} streams`;
+    templateSongs.querySelector(".text-sub").innerText = `${commafy(Math.round(getStreamStats(sortedSongs[i], "msPlayed", min, max) / 1000.0 / 60.0))} minutes | ${commafy(getStreamStats(sortedSongs[i], "streams", min, max))} streams`;
 
     item = document.importNode(templateSongs.querySelector("tr"), true);
     item.addEventListener("click", () => moreInfo("song", sortedSongs[i].internalID));
@@ -337,9 +383,10 @@ function commafy(x) {
 }
 
 function getEarlierDate(arr, date) {
-  return arr.findIndex((d) => {
+  let i = arr.findIndex((d) => {
     return new Date(d) - new Date(date) >= 0
   });
+  return i >= 0 ? i : 0;
 }
 
 function getLaterDate(arr, date) {
@@ -404,7 +451,6 @@ function download() {
   saveAs(blob, "data.txt");
 }
 
-// License: CC0
 function stringifyReplacer(key, value) {
   if (typeof value === "object" && value !== null) {
     if (value instanceof Map) {
