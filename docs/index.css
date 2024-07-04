@@ -373,10 +373,33 @@ body {
   width: 100vw;
   height: 100vh;
   opacity: 1;
-  background-color: var(--background-color);
+  backdrop-filter: blur(4px) brightness(40%);
 
   #favorites-popup-artist-panel {
+    display: flex;
+    justify-content: space-between;
+    justify-items: center;
+    margin: 3vw;
+    height: 30px;
 
+    div {
+      transition: 300ms;
+      width: fit-content;
+      height: auto;
+      border-radius: 50%;
+      background-color: var(--background-color);
+
+      img {
+        width: 24px;
+        height: auto;
+        margin: 3px;
+      }
+    }
+
+    div:hover {
+      cursor: pointer;
+      filter: invert(1);
+    }
   }
 
   #favorites-popup-artist {
