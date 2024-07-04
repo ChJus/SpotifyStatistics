@@ -365,8 +365,9 @@ body {
 #favorites-popup-artist-wrapper {
   left: 0;
   top: 0;
-  display: block;
+  display: none;
   justify-content: center;
+  align-items: center;
   position: fixed;
   padding: 30px;
   z-index: 1000;
@@ -377,10 +378,14 @@ body {
 
   #favorites-popup-artist-panel {
     display: flex;
+    position: absolute;
+    top: 1vw;
+    width: calc(100% - 4vw);
     justify-content: space-between;
     justify-items: center;
-    margin: 3vw;
+    margin: 15px;
     height: 30px;
+    z-index: 1000;
 
     div {
       transition: 300ms;
@@ -405,23 +410,28 @@ body {
   #favorites-popup-artist {
     background-color: var(--secondary-background-darker);
     border-radius: 10px;
-    filter: drop-shadow(0px 0px 4px rgba(255, 255, 255, 0.4));
+    filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.4));
+    justify-content: space-evenly;
     display: flex;
-    justify-content: space-between;
-    padding: 4vw;
+    padding: 4vw 2vw;
+    width: fit-content;
     flex-wrap: wrap;
+    height: calc(95% - 30px);
+    margin: auto auto;
 
     #favorites-popup-artist-left {
       width: 30%;
+      min-width: 150px;
+      max-width: fit-content;
+      height: 100%;
 
       #favorites-popup-artist-left-image-wrapper {
-        max-width: 120px;
-        max-height: 120px;
+        width: 100px;
+        height: 100px;
         display: block;
         border-radius: 50%;
-        overflow-y: hidden;
-        margin: auto;
-        padding: 2vw;
+        overflow: hidden;
+        margin: 2vw auto;
 
         img {
           width: 100%;
@@ -448,13 +458,17 @@ body {
 
     #favorites-popup-artist-right {
       width: 65%;
+      display: block;
+      height: 100%;
+      max-width: 500px;
 
       #favorites-popup-songs-table {
         font-size: 12pt;
         width: 100%;
         border-collapse: collapse;
-        max-height: 70%;
-        overflow-y: auto;
+        display: block;
+        max-height: 100%;
+        overflow-y: scroll;
 
         tr {
           align-content: center;
@@ -511,8 +525,7 @@ body {
           .text-div {
             display: block;
             padding-left: 25px;
-            min-width: 200px;
-            max-width: 400px;
+            flex: 1;
             word-wrap: break-word;
             line-height: 1.5;
             text-align: left;

@@ -324,18 +324,6 @@ async function refreshDashboard(d, dateMin, dateMax) {
   document.querySelector("#overall #overall-days").innerText = `${commafy(getLaterDate([...data.activeDays], max) - getEarlierDate([...data.activeDays], min))} / ${commafy(Math.min(data.accountAge, Math.round((max - min) / (1000.0 * 3600.0 * 24.0))))}`;
   document.querySelector("#overall #overall-avg-session").innerText = `${commafy(Math.ceil(parseFloat(document.querySelector("#overall #overall-minutes").innerText.replaceAll(",", "")) / (getLaterDate([...data.activeDays], max) - getEarlierDate([...data.activeDays], min))))}`;
 
-  function getStreamStats(item, property, min, max) {
-    let i = item.streamHistory.findIndex((d) => {
-      return new Date(d.date) - new Date(min) >= 0
-    });
-    i = i >= 0 ? i : 0;
-    let j = item.streamHistory.findLastIndex((d) => {
-      return new Date(d.date) - new Date(max) <= 0
-    });
-    j = j >= 0 ? j : item.streamHistory.length - 1;
-    return item.streamHistory[j][property] - item.streamHistory[i][property];
-  }
-
   let sortedArtists = [...data.artistStats.values()].toSorted((a, b) => {
     return getStreamStats(b, "msPlayed", min, max) - getStreamStats(a, "msPlayed", min, max)
   });
@@ -360,7 +348,7 @@ async function refreshDashboard(d, dateMin, dateMax) {
     templateArtists.querySelector(".text-sub").innerText = `${commafy(Math.round(getStreamStats(sortedArtists[i], "msPlayed", min, max) / 1000.0 / 60.0))} minutes | ${commafy(getStreamStats(sortedArtists[i], "streams", min, max))} streams`;
 
     let item = document.importNode(templateArtists.querySelector("tr"), true);
-    item.addEventListener("click", () => moreInfo("artist", sortedArtists[i].name));
+    item.addEventListener("click", () => moreInfo("artist", data, sortedArtists[i].name));
     document.querySelector("#favorites-artists-table").appendChild(item);
 
     templateSongs.querySelectorAll("tr td")[0].innerText = `${(i + 1)}`;
@@ -369,13 +357,56 @@ async function refreshDashboard(d, dateMin, dateMax) {
     templateSongs.querySelector(".text-sub").innerText = `${commafy(Math.round(getStreamStats(sortedSongs[i], "msPlayed", min, max) / 1000.0 / 60.0))} minutes | ${commafy(getStreamStats(sortedSongs[i], "streams", min, max))} streams`;
 
     item = document.importNode(templateSongs.querySelector("tr"), true);
-    item.addEventListener("click", () => moreInfo("song", sortedSongs[i].internalID));
+    item.addEventListener("click", () => moreInfo("song", data, sortedSongs[i].internalID));
     document.querySelector("#favorites-songs-table").appendChild(item);
   }
 }
 
-function moreInfo(type, id) {
-  console.log(type, id)
+function getStreamStats(item, property, min, max) {
+  let i = item.streamHistory.findIndex((d) => {
+    return new Date(d.date) - new Date(min) >= 0
+  });
+  i = i >= 0 ? i : 0;
+  let j = item.streamHistory.findLastIndex((d) => {
+    return new Date(d.date) - new Date(max) <= 0
+  });
+  j = j >= 0 ? j : item.streamHistory.length - 1;
+  return item.streamHistory[j][property] - item.streamHistory[i][property];
+}
+
+let previouslyViewed = [];
+
+function moreInfo(type, data, id) {
+  if (type === "artist") {
+    let artist = data.artistStats.get(id);
+    if (artist === undefined) return;
+
+    document.querySelector("#favorites-popup-artist-wrapper").style.display = "flex";
+    document.querySelector("#favorites-popup-artist-left-image-wrapper img").src = `${artist.image !== null ? artist.image : ''}`;
+    document.querySelector("#favorites-popup-artist-name").innerText = `${artist.name}`;
+    document.querySelector("#favorites-popup-artist-stats").innerText = `${commafy(Math.round(getStreamStats(artist, "msPlayed", data.startDate, data.endDate) / 1000.0 / 60.0))} minutes | ${commafy(getStreamStats(artist, "streams", data.startDate, data.endDate))} streams`;
+
+    let remove = document.querySelectorAll("#favorites-popup-songs-table > tr");
+    for (let i = remove.length - 1; i >= 0; i--) {
+      remove[i].parentNode.removeChild(remove[i]);
+    }
+
+    let templateSongs = document.querySelector("#favorites-popup-songs-row-template").content;
+
+    for (let i = 0; i < artist.songs.size; i++) {
+      let song = data.songStats.get([...artist.songs][i]);
+      // item.addEventListener("click", () => moreInfo("artist", data, sortedArtists[i].name));
+      templateSongs.querySelectorAll("tr td")[0].innerText = `${(i + 1)}`;
+      templateSongs.querySelector(".img-div img").src = `${song.image !== null ? song.image : ''}`;
+      templateSongs.querySelector(".text-main").innerText = `${song.trackName}`;
+      templateSongs.querySelector(".text-sub").innerText = `${commafy(Math.round(getStreamStats(song, "msPlayed", data.startDate, data.endDate) / 1000.0 / 60.0))} minutes | ${commafy(getStreamStats(song, "streams", data.startDate, data.endDate))} streams`;
+      let item = document.importNode(templateSongs.querySelector("tr"), true);
+      item.addEventListener("click", () => moreInfo("song", data, song.internalID));
+      document.querySelector("#favorites-popup-songs-table").appendChild(item);
+    }
+  } else {
+    let song = data.songStats.get(id);
+  }
 }
 
 function commafy(x) {
