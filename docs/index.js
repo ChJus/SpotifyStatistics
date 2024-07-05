@@ -367,7 +367,7 @@ let windowResizeTimeout = null;
 window.addEventListener('resize', async () => {
   if (windowResizeTimeout) clearTimeout(windowResizeTimeout);
   windowResizeTimeout = setTimeout(() => {
-    refreshDashboard(processedData, processedData.startDate, processedData.endDate);
+    document.querySelector("#settings .tab.active").click();
   }, 50);
 }, true);
 
@@ -538,6 +538,7 @@ function refreshOverallStreamsGraph(data, min, max) {
     // y-axis
     svg.append("g")
       .attr("class", "y-axis")
+
     update(dataset)
   }
 
@@ -557,10 +558,33 @@ function refreshOverallStreamsGraph(data, min, max) {
       return d.streams
     })]);
 
-    svg.selectAll(".y-axis")
-      .transition()
+    svg.selectAll(".y-axis").transition()
       .duration(500)
       .call(yAxis);
+
+    svg.select(".y-axis")
+      .call(g => g.selectAll(".horizontal-line, .label, .domain").remove())
+      .call(g => g.selectAll(".tick line").clone()
+        .attr("class", "horizontal-line")
+        .attr("x2", width)
+        .attr("stroke-opacity", 0.1))
+      .call(g => g.append("text")
+        .attr("x", -margin.left)
+        .attr("y", 0)
+        .attr("fill", "currentColor")
+        .attr("text-anchor", "start")
+        .attr("class", "label")
+        .text("↑ Streams"))
+
+    svg.select(".x-axis")
+      .call(g => g.selectAll(".label").remove())
+      .call(g => g.append("text")
+        .attr("x", width - margin.right)
+        .attr("y", margin.bottom)
+        .attr("fill", "currentColor")
+        .attr("text-anchor", "start")
+        .attr("class", "label")
+        .text("→ Date"))
 
     // Create an update selection: bind to the new data
     let u = svg.selectAll(".lineTest")
