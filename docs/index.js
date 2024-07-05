@@ -149,6 +149,24 @@ async function readData(text) {
   }
 }
 
+/*
+* Obtain summary statistics from data file and Spotify API.
+* NOTE: this process is done in *five* steps:
+* 1. Go through data file and create initial list of unique songs.
+*    Initialize each entry with attributes msPlayed, streamHistory.
+*    Place this song entry into the songStats Map (where key is a string hash based on
+*    a string concatenation of the track's name and artists).
+*    Also, modify the uniqueSongs map, which represents a cumulative count of unique
+*    songs over time stored with unique dates as keys.
+* 2. Loop through each unique song and work with Spotify API. Obtain information about
+*    the song's spotifyID, duration, image, and artists. Also, assemble a list of unique
+*    artists, and initialize fields spotifyID, duration, and image. Modify uniqueArtists map
+*    to represent cumulative unique artists over time.
+* 3. Run through each artist and search for their metadata using Spotify API.
+* 4. Run through streaming data again and this time update streamingHistory for each song and artist.
+*    Also create list of cumulative streams and time by date.
+* 5. Obtain more song information from API (e.g., acousticness)
+* */
 async function summaryStatistics(data) {
   document.querySelector("#progress-container").style.display = "block";
   document.querySelector("#popup-progress-container").style.display = "block";
@@ -158,6 +176,7 @@ async function summaryStatistics(data) {
 
   let endD = new Date(approximateDate(data[data.length - 1].endTime));
   endD.setDate(endD.getDate() + 1);
+
   let result = {
     history: new Map([[prevD, {date: prevD, msPlayed: 0, streams: 0}]]),
     uniqueSongs: new Map([[approximateDate(prevD), {date: approximateDate(prevD), count: 0}]]),
@@ -195,11 +214,11 @@ async function summaryStatistics(data) {
   document.querySelector("#progress").max = result.songStats.size;
   document.querySelector("#popup-progress").max = result.songStats.size;
   for (let [i, s] of result.songStats) {
-    if (EXCEEDED_REQUEST_LIMIT) {
+    if (EXCEEDED_REQUEST_LIMIT) { // Stop immediately if we hit 429 exceeded request limit.
       break;
     }
     httpGetAsync("https://api.spotify.com/v1/search?q=" + encodeURIComponent("artist:" + s.artistName + " track:" + s.trackName) + "&type=track&limit=1", (t) => {
-      if (JSON.parse(t)["tracks"]["items"].length === 0) {
+      if (JSON.parse(t)["tracks"]["items"].length === 0) { // Delete tracks if they can't be found through Spotify API search (e.g., user tracks)
         result.songStats.delete(i);
         document.querySelector("#progress").max = result.songStats.size;
         document.querySelector("#popup-progress").max = result.songStats.size;
@@ -335,6 +354,7 @@ async function summaryStatistics(data) {
     await sleep(1000 / QUERY_RATE_PER_SECOND);
   }
 
+  // Other useful information
   result.activeDays = new Set(data.map(d => approximateDate(d.endTime)));
   result.accountAge = Math.round((result.endDate - result.startDate) / (1000.0 * 3600.0 * 24.0));
 
@@ -343,20 +363,29 @@ async function summaryStatistics(data) {
   return result;
 }
 
+// Update all information displays based on data and time range
 async function refreshDashboard(d, dateMin, dateMax) {
   // todo: see if can find way to efficiently find unique songs in range of time
   // todo: serialize with short field names, consider converting all ms to minutes
   // todo: handle case where storage overflows 5MB.
   // todo: tabs to switch between feature (top artists/songs, graphs)
-  let data = structuredClone(d);
+  let data = structuredClone(d); // avoid modifying computed data
+
+  // Get simplified date (date at midnight, equivalently the simple date 'yyyy-mm-dd')
   let min = new Date(approximateDate(new Date(dateMin))), max = new Date(approximateDate(new Date(dateMax)));
+
+  // Format for displayed dates
   let dateFormat = {year: 'numeric', month: 'long', day: 'numeric'};
 
+  // _actual_ account age information (recall that for computational simplicity, was set
+  // to day before first stream and day after last stream respectively)
   let born = new Date(dateMax), upTo = new Date(dateMax);
   born.setDate(born.getDate() - data.accountAge + 1);
   upTo.setDate(upTo.getDate() - 1)
+
   document.querySelector("#profile-right #lifespan").innerText = born.toLocaleDateString("en-US", dateFormat) + " — " + upTo.toLocaleDateString("en-US", dateFormat);
 
+  // Display summary information
   document.querySelector("#overall #overall-minutes").innerText = commafy(Math.round(([...data.history.values()][getLaterDate([...data.history.keys()], max)].msPlayed - [...data.history.values()][getEarlierDate([...data.history.keys()], min)].msPlayed) / 1000.0 / 60.0));
   document.querySelector("#overall #overall-streams").innerText = commafy([...data.history.values()][getLaterDate([...data.history.keys()], max)].streams - [...data.history.values()][getEarlierDate([...data.history.keys()], min)].streams);
   document.querySelector("#overall #overall-songs").innerText = commafy([...data.uniqueSongs.values()][getLaterDate([...data.uniqueSongs.keys()], max)].count - [...data.uniqueSongs.values()][getEarlierDate([...data.uniqueSongs.keys()], min)].count);
@@ -364,8 +393,11 @@ async function refreshDashboard(d, dateMin, dateMax) {
   document.querySelector("#overall #overall-days").innerText = `${commafy(getLaterDate([...data.activeDays], max) - getEarlierDate([...data.activeDays], min))} / ${commafy(Math.min(data.accountAge, Math.round((max - min) / (1000.0 * 3600.0 * 24.0))))}`;
   document.querySelector("#overall #overall-avg-session").innerText = `${commafy(Math.ceil(parseFloat(document.querySelector("#overall #overall-minutes").innerText.replaceAll(",", "")) / (getLaterDate([...data.activeDays], max) - getEarlierDate([...data.activeDays], min))))}`;
 
+  // Check on graphs (may update range and/or data)
   checkOverallGraphs(data, min, max);
 
+  // Get list of artists and songs sorted by streaming time
+  // todo: allow option to sort by stream count
   let sortedArtists = [...data.artistStats.values()].toSorted((a, b) => {
     return getStreamStats(b, "msPlayed", min, max) - getStreamStats(a, "msPlayed", min, max)
   });
@@ -376,6 +408,7 @@ async function refreshDashboard(d, dateMin, dateMax) {
   let templateArtists = document.querySelector("#favorites-artists-row-template").content;
   let templateSongs = document.querySelector("#favorites-songs-row-template").content;
 
+  // Remove all rows (except for headers) to prepare for adding rows
   let remove = document.querySelectorAll("#favorites-artists-table > tr");
   let remove2 = document.querySelectorAll("#favorites-songs-table > tr");
   for (let i = remove.length - 1; i >= 0; i--) {
