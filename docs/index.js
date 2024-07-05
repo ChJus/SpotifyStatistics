@@ -363,6 +363,14 @@ async function summaryStatistics(data) {
   return result;
 }
 
+let windowResizeTimeout = null;
+window.addEventListener('resize', async () => {
+  if (windowResizeTimeout) clearTimeout(windowResizeTimeout);
+  windowResizeTimeout = setTimeout(() => {
+    refreshDashboard(processedData, processedData.startDate, processedData.endDate);
+  }, 50);
+}, true);
+
 // Update all information displays based on data and time range
 async function refreshDashboard(d, dateMin, dateMax) {
   // todo: see if can find way to efficiently find unique songs in range of time
@@ -394,7 +402,7 @@ async function refreshDashboard(d, dateMin, dateMax) {
   document.querySelector("#overall #overall-avg-session").innerText = `${commafy(Math.ceil(parseFloat(document.querySelector("#overall #overall-minutes").innerText.replaceAll(",", "")) / (getLaterDate([...data.activeDays], max) - getEarlierDate([...data.activeDays], min))))}`;
 
   // Check on graphs (may update range and/or data)
-  checkOverallGraphs(data, min, max);
+  refreshGraphs(data, min, max);
 
   // Get list of artists and songs sorted by streaming time
   // todo: allow option to sort by stream count
@@ -439,8 +447,147 @@ async function refreshDashboard(d, dateMin, dateMax) {
   }
 }
 
-function checkOverallGraphs(data, min, max) {
+function refreshGraphs(data, min, max) {
+  refreshOverallStreamsGraph(data, min, max);
+}
 
+function refreshOverallStreamsGraph(data, min, max) {
+  let d = structuredClone([...data.history.values()]);
+  let dates = [...new Set(d.map(d => approximateDate(new Date(d.date))))]
+  let eDay = new Date(min);
+  eDay.setDate(eDay.getDate() - 1);
+
+  let dataset = [{
+    date: new Date(approximateDate(new Date(eDay))),
+    streams: d[getLast(d, eDay) + 1].streams,
+    msPlayed: d[getLast(d, eDay) + 1].msPlayed
+  }];
+  for (let i = 0; i < Math.round((new Date(max) - new Date(min)) / 24.0 / 3600.0 / 1000.0) - 1; i++) {
+    let sd = new Date(min);
+    sd.setDate(sd.getDate() + i);
+    let ed = new Date(sd);
+    ed.setDate(ed.getDate() + 1);
+
+    if (dates.includes(approximateDate(sd))) {
+      dataset.push({
+        date: sd,
+        streams: d[getLast(d, ed)].streams,
+        msPlayed: d[getLast(d, ed)].msPlayed
+      });
+    } else {
+      dataset.push({
+        date: sd,
+        streams: dataset[dataset.length - 1].streams,
+        msPlayed: dataset[dataset.length - 1].msPlayed
+      });
+    }
+  }
+
+  // %j: by day, %U: by week, %m: by month
+  let group = d3.utcFormat("%j");
+  let nest = [...d3.group(dataset, d => group(new Date(d.date))).values()];
+  dataset = [];
+  for (let i = 1; i < nest.length; i++) {
+    dataset.push({
+      date: new Date(approximateDate(new Date(nest[i][nest[i].length - 1].date))),
+      streams: nest[i][nest[i].length - 1].streams - nest[i - 1][nest[i - 1].length - 1].streams,
+      msPlayed: nest[i][nest[i].length - 1].msPlayed - nest[i - 1][nest[i - 1].length - 1].msPlayed,
+    });
+  }
+
+  function getLast(data, date) {
+    for (let i = 0; i < data.length; i++) {
+      if (new Date(date) - new Date(data[i].date) < 0) {
+        return i - 1;
+      }
+    }
+  }
+
+  // Graph margins
+  let margin = {top: 10, right: 30, bottom: 30, left: 50},
+    width = document.querySelector("#overall-graphs").clientWidth - margin.left - margin.right,
+    height = 200 - margin.top - margin.bottom;
+
+  let svg;
+  let x = d3.scaleUtc().range([0, width]);
+  let xAxis = d3.axisBottom().scale(x).ticks(width / 80);
+
+  let y = d3.scaleLinear().range([height, 0]);
+  let yAxis = d3.axisLeft().scale(y).ticks(height / 40);
+
+  // If the graphs exist, just modify their time range
+  if (document.querySelector("#overall-graphs").children.length > 0) {
+    svg = d3.select("#overall-graphs svg")
+      .attr("width", width + margin.left + margin.right)
+    update(dataset);
+  } else {
+    svg = d3.select("#overall-graphs")
+      .append("svg")
+      .attr("width", width + margin.left + margin.right)
+      .attr("height", height + margin.top + margin.bottom)
+      .attr("id", "overall-stream-count-history")
+      .append("g")
+      .attr("transform",
+        "translate(" + margin.left + "," + margin.top + ")");
+
+    // x-axis
+    svg.append("g")
+      .attr("transform", "translate(0," + height + ")")
+      .attr("class", "x-axis")
+
+    // y-axis
+    svg.append("g")
+      .attr("class", "y-axis")
+    update(dataset)
+  }
+
+  // Update function for graph
+  function update(data) {
+    // x-axis
+    x.domain(d3.extent(data, function (d) {
+      return d3.utcParse("%Y-%m-%d")(approximateDate(new Date(d.date)))
+    }));
+
+    svg.selectAll(".x-axis").transition()
+      .duration(500)
+      .call(xAxis); // limit number of ticks to prevent cramping
+
+    // y-axis
+    y.domain([0, d3.max(data, function (d) {
+      return d.streams
+    })]);
+
+    svg.selectAll(".y-axis")
+      .transition()
+      .duration(500)
+      .call(yAxis);
+
+    // Create an update selection: bind to the new data
+    let u = svg.selectAll(".lineTest")
+      .data([data], function (d) {
+        return d3.utcParse("%Y-%m-%d")(approximateDate(new Date(d.date)))
+      });
+
+    // Update the line
+    u
+      .enter()
+      .append("path")
+      .attr("class", "lineTest")
+      .merge(u)
+      .transition()
+      .duration(500)
+      .attr("d", d3.line()
+        .x(function (d) {
+          return x(d3.utcParse("%Y-%m-%d")(approximateDate(new Date(d.date))));
+        })
+        .y(function (d) {
+          return y(d.streams);
+        })
+      )
+      .attr("fill", "none")
+      .attr("stroke", "var(--spotify-green)")
+      .attr("stroke-width", 1.75)
+  }
 }
 
 // Get streaming statistics in a time range (as info is stored cumulatively)

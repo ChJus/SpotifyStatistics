@@ -6,6 +6,8 @@
   --secondary-foreground: rgb(200, 200, 200);
   --secondary-background: rgb(60, 60, 60);
   --secondary-background-darker: rgb(35, 35, 35);
+  --spotify-green: #1DB954;
+  --spotify-green-darker: #15813b;
 }
 
 * {
@@ -694,3 +696,6 @@ body {
   }
 }
 
+svg text {
+  font-family: "DM Sans", sans-serif;
+}
