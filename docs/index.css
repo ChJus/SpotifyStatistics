@@ -619,6 +619,7 @@ body {
           font-size: 14pt;
           font-weight: bold;
           text-align: center;
+          word-break: break-word;
         }
 
         #popup-song-artists {
