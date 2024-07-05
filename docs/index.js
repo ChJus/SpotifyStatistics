@@ -10,7 +10,7 @@ i2 = atob(i2);
 
 // localStorage helper cache functions
 const serialize = (value) => JSON.stringify(value, stringifyReplacer);
-const deserialize = (text) => JSON.parse(text, parseReviver);
+const deserialize = async (text) => JSON.parse(text, parseReviver);
 
 // Initial visibility is hidden for download (waits until file is uploaded)
 document.querySelector("#download").addEventListener("click", download);
@@ -80,7 +80,7 @@ await login();
 // Check if there is data cached in localStorage
 if (localStorage.hasOwnProperty("data")) {
   document.querySelector("#popup-container").style.display = "none";
-  processedData = deserialize(localStorage.getItem("data"));
+  processedData = await deserialize(localStorage.getItem("data"));
   document.querySelector("#download").style.display = "inline-block";
   await refreshDashboard(processedData, processedData.startDate, processedData.endDate);
 }
@@ -101,7 +101,7 @@ document.querySelector("#popup-file").addEventListener("change", async (e) => {
     processedData = await summaryStatistics(data);
     localStorage.setItem("data", serialize(processedData));
   } else { // todo: error handle, alternatively, upload a .txt file with data downloaded from this site using the download functionality
-    processedData = deserialize(text);
+    processedData = await deserialize(text);
     localStorage.setItem("data", text);
   }
   await refreshDashboard(processedData, processedData.startDate, processedData.endDate);
@@ -119,7 +119,7 @@ document.querySelector("#file").addEventListener("change", async (e) => {
     processedData = await summaryStatistics(data);
     localStorage.setItem("data", serialize(processedData));
   } else {
-    processedData = deserialize(text);
+    processedData = await deserialize(text);
     localStorage.setItem("data", text);
   }
 
@@ -484,7 +484,8 @@ function refreshOverallStreamsGraph(data, min, max) {
   }
 
   // %j: by day, %U: by week, %m: by month
-  let group = d3.utcFormat("%j");
+  // Note %Y groups by year — this helps prevent unintended grouping of days in different years
+  let group = d3.utcFormat("%m %Y");
   let nest = [...d3.group(dataset, d => group(new Date(d.date))).values()];
   dataset = [];
   for (let i = 1; i < nest.length; i++) {
@@ -501,6 +502,7 @@ function refreshOverallStreamsGraph(data, min, max) {
         return i - 1;
       }
     }
+    return data.length - 1;
   }
 
   // Graph margins
