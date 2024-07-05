@@ -4,14 +4,6 @@ Analyze your Spotify listening data from [Spotify](https://www.spotify.com/us/ac
 
 ## Features
 
-🟩 Users can select a timeframe — this month, this year, all time, custom.
-
-🟩 General statistics: total listening time, number of streams, number of unique songs/artists, days active, average
-daily session listening
-time
-
-🟩 Individual statistics: favorite songs and artists
-
 ❌ Listening trends by time of day / day of week (streaming time, type of songs)
 
 ❌ Colored calendar showing listening time by day

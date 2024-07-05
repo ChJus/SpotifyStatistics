@@ -19,6 +19,15 @@ document.querySelectorAll("#settings button").forEach(button => {
     e.target.classList.add("active");
     let option = e.target.id.split("-")[1];
     let sd, ed;
+    if (option !== "all") {
+      if (!document.querySelector("#overall-songs").parentNode.innerHTML.includes("new")) {
+        document.querySelector("#overall-songs").parentNode.innerHTML = document.querySelector("#overall-songs").parentNode.innerHTML.replace(" songs", " new songs");
+        document.querySelector("#overall-artists").parentNode.innerHTML = document.querySelector("#overall-artists").parentNode.innerHTML.replace(" artists", " new artists");
+      }
+    } else {
+      document.querySelector("#overall-songs").parentNode.innerHTML = document.querySelector("#overall-songs").parentNode.innerHTML.replace(" new songs", " songs");
+      document.querySelector("#overall-artists").parentNode.innerHTML = document.querySelector("#overall-artists").parentNode.innerHTML.replace(" new artists", " artists");
+    }
     switch (option) {
       case "all":
         sd = processedData.startDate;
@@ -446,7 +455,6 @@ function moreInfo(type, data, id) {
     let span = document.createElement("span");
     span.innerHTML = ", ";
     for (let i = 0; i < song.artists.size; i++) {
-      console.log(i, song.artists.size - 1)
       let element = document.createElement("a");
       element.innerHTML = [...song.artists][i];
       element.addEventListener("click", () => {
