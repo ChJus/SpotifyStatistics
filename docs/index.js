@@ -379,18 +379,12 @@ let previouslyViewed = [];
 document.querySelector("#popup-artist-back-wrapper").addEventListener("click", () => {
   previouslyViewed.pop();
   let item = previouslyViewed.pop();
-  if (item.type === "song") {
-    document.querySelector("#popup-artist-wrapper").style.display = "none";
-  }
   moreInfo(item.type, item.data, item.id);
 })
 
 document.querySelector("#popup-song-back-wrapper").addEventListener("click", () => {
   previouslyViewed.pop();
   let item = previouslyViewed.pop();
-  if (item.type === "artist") {
-    document.querySelector("#popup-song-wrapper").style.display = "none";
-  }
   moreInfo(item.type, item.data, item.id);
 })
 
@@ -418,6 +412,7 @@ function moreInfo(type, data, id) {
     if (artist === undefined) return;
 
     document.querySelector("#popup-artist-wrapper").style.display = "flex";
+    document.querySelector("#popup-song-wrapper").style.display = "none";
     document.querySelector("#popup-artist-left-image-wrapper img").src = `${artist.image !== null ? artist.image : ''}`;
     document.querySelector("#popup-artist-name").innerText = `${artist.name}`;
     document.querySelector("#popup-artist-stats").innerText = `${commafy(Math.round(getStreamStats(artist, "msPlayed", data.startDate, data.endDate) / 1000.0 / 60.0))} minutes | ${commafy(getStreamStats(artist, "streams", data.startDate, data.endDate))} streams`;
@@ -447,7 +442,24 @@ function moreInfo(type, data, id) {
     let song = data.songStats.get(id);
     if (song === undefined) return;
 
+    document.querySelector("#popup-song-artists").innerHTML = "";
+    let span = document.createElement("span");
+    span.innerHTML = ", ";
+    for (let i = 0; i < song.artists.size; i++) {
+      console.log(i, song.artists.size - 1)
+      let element = document.createElement("a");
+      element.innerHTML = [...song.artists][i];
+      element.addEventListener("click", () => {
+        moreInfo("artist", data, [...song.artists][i])
+      });
+      document.querySelector("#popup-song-artists").appendChild(element);
+      if (i !== song.artists.size - 1) {
+        document.querySelector("#popup-song-artists").appendChild(span.cloneNode(true));
+      }
+    }
+
     document.querySelector("#popup-song-wrapper").style.display = "flex";
+    document.querySelector("#popup-artist-wrapper").style.display = "none";
     document.querySelector("#popup-song-left-image-wrapper img").src = `${song.image !== null ? song.image : ''}`;
     document.querySelector("#popup-song-name").innerText = `${song.trackName}`;
     document.querySelector("#popup-song-stats").innerText = `${commafy(Math.round(getStreamStats(song, "msPlayed", data.startDate, data.endDate) / 1000.0 / 60.0))} minutes | ${commafy(getStreamStats(song, "streams", data.startDate, data.endDate))} streams`;

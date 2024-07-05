@@ -619,6 +619,25 @@ body {
           text-align: center;
         }
 
+        #popup-song-artists {
+          font-size: 12pt;
+          font-weight: 400;
+          text-align: center;
+          margin: 1vw auto 0 auto;
+          color: var(--secondary-foreground);
+
+          a {
+            text-decoration: none;
+            border-bottom: 1px solid;
+            transition: 300ms;
+          }
+
+          a:hover {
+            color: var(--foreground-color);
+            cursor: pointer;
+          }
+        }
+
         #popup-song-stats {
           font-size: 10pt;
           font-weight: 400;
