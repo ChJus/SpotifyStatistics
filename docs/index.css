@@ -697,8 +697,16 @@ body {
   }
 }
 
-svg text {
-  font-family: "DM Sans", sans-serif;
+svg {
+  text {
+    font-family: "DM Sans", sans-serif;
+    font-size: 10pt;
+  }
+
+  .label {
+    backdrop-filter: blur(4px);
+    background-color: var(--background-color);
+  }
 }
 
 #overall-graphs {

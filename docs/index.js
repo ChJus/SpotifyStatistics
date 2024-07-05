@@ -494,21 +494,25 @@ function refreshOverallStreamsGraph(data, min, max) {
   let group;
   switch (document.querySelector("#overall-graphs-group-preference").value) {
     case "d":
-      group = d3.utcFormat("%j %Y");
+      group = d3.timeFormat("%j %Y");
       break;
     case "w":
-      group = d3.utcFormat("%U %Y");
+      group = d3.timeFormat("%U %Y");
       break;
     case "m":
-      group = d3.utcFormat("%m %Y");
+      group = d3.timeFormat("%m %Y");
       break;
   }
 
   let nest = [...d3.group(dataset, d => group(new Date(d.date))).values()];
-  dataset = [];
+  dataset = [{
+    date: new Date(nest[0][0].date),
+    streams: nest[0][nest[0].length - 1].streams - nest[0][0].streams,
+    msPlayed: nest[0][nest[0].length - 1].msPlayed - nest[0][0].msPlayed
+  }];
   for (let i = 1; i < nest.length; i++) {
     dataset.push({
-      date: new Date(approximateDate(new Date(nest[i][nest[i].length - 1].date))),
+      date: new Date(approximateDate(new Date(nest[i][0].date))),
       streams: nest[i][nest[i].length - 1].streams - nest[i - 1][nest[i - 1].length - 1].streams,
       msPlayed: nest[i][nest[i].length - 1].msPlayed - nest[i - 1][nest[i - 1].length - 1].msPlayed,
     });
@@ -529,11 +533,11 @@ function refreshOverallStreamsGraph(data, min, max) {
     height = 200 - margin.top - margin.bottom;
 
   let svg;
-  let x = d3.scaleUtc().range([0, width]);
-  let xAxis = d3.axisBottom().scale(x).ticks(width / 80);
+  let x = d3.scaleTime().range([0, width]);
+  let xAxis = d3.axisBottom().scale(x).ticks(5);
 
   let y = d3.scaleLinear().range([height, 0]);
-  let yAxis = d3.axisLeft().scale(y).ticks(height / 40);
+  let yAxis = d3.axisLeft().scale(y).ticks(5);
 
   // If the graphs exist, just modify their time range
   if (document.querySelector("#overall-graphs svg") !== null) {
@@ -566,7 +570,7 @@ function refreshOverallStreamsGraph(data, min, max) {
   function update(data) {
     // x-axis
     x.domain(d3.extent(data, function (d) {
-      return d3.utcParse("%Y-%m-%d")(approximateDate(new Date(d.date)))
+      return d3.timeParse("%Y-%m-%d")(approximateDate(new Date(d.date)))
     }));
 
     svg.selectAll(".x-axis").transition()
@@ -609,7 +613,7 @@ function refreshOverallStreamsGraph(data, min, max) {
     // Create an update selection: bind to the new data
     let u = svg.selectAll(".lineTest")
       .data([data], function (d) {
-        return d3.utcParse("%Y-%m-%d")(approximateDate(new Date(d.date)))
+        return d3.timeParse("%Y-%m-%d")(approximateDate(new Date(d.date)))
       });
 
     // Update the line
@@ -622,7 +626,7 @@ function refreshOverallStreamsGraph(data, min, max) {
       .duration(500)
       .attr("d", d3.line()
         .x(function (d) {
-          return x(d3.utcParse("%Y-%m-%d")(approximateDate(new Date(d.date))));
+          return x(d3.timeParse("%Y-%m-%d")(approximateDate(new Date(d.date))));
         })
         .y(function (d) {
           return y(d.streams);
