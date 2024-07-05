@@ -1,24 +1,35 @@
-let b = true;
+// Global variables and constants
+let EXCEEDED_REQUEST_LIMIT = false;
 let QUERY_RATE_PER_SECOND = 10.0;
 let processedData, data;
+
+// API
 let i1 = "NmQyMDhlNGY3NzZiNGMxNmI0ODk2M2NkMTEwZWQwODQ=", i2 = "YWIyMTQ3MGIzN2VkNGFlYmI2NjY4Y2NlMjRmZDQyMDM="
 i1 = atob(i1);
 i2 = atob(i2);
 
+// localStorage helper cache functions
 const serialize = (value) => JSON.stringify(value, stringifyReplacer);
 const deserialize = (text) => JSON.parse(text, parseReviver);
 
+// Initial visibility is hidden for download (waits until file is uploaded)
 document.querySelector("#download").addEventListener("click", download);
 document.querySelector("#download").style.display = "none";
 
+// Add event listeners to time frequency range buttons
 document.querySelectorAll("#settings button").forEach(button => {
   button.addEventListener("click", async (e) => {
+    // Only highlight selected range (acts as toggle, similar to radio button group)
     document.querySelectorAll("#settings button").forEach(button => {
       button.classList.remove("active");
     });
     e.target.classList.add("active");
+
+    // Get range option by part of button's id (of the form "tab-__")
     let option = e.target.id.split("-")[1];
-    let sd, ed;
+    let sd, ed; // start date, end date
+
+    // Replace text depending on selected time range
     if (option !== "all") {
       if (!document.querySelector("#overall-songs").parentNode.innerHTML.includes("new")) {
         document.querySelector("#overall-songs").parentNode.innerHTML = document.querySelector("#overall-songs").parentNode.innerHTML.replace(" songs", " new songs");
@@ -28,6 +39,8 @@ document.querySelectorAll("#settings button").forEach(button => {
       document.querySelector("#overall-songs").parentNode.innerHTML = document.querySelector("#overall-songs").parentNode.innerHTML.replace(" new songs", " songs");
       document.querySelector("#overall-artists").parentNode.innerHTML = document.querySelector("#overall-artists").parentNode.innerHTML.replace(" new artists", " artists");
     }
+
+    // Update dashboard based on date range
     switch (option) {
       case "all":
         sd = processedData.startDate;
@@ -35,24 +48,24 @@ document.querySelectorAll("#settings button").forEach(button => {
         break;
       case "1y":
         sd = new Date(processedData.endDate);
-        sd.setDate(sd.getDate() - 365);
+        sd.setDate(sd.getDate() - 365); // one year := 365 days here
         ed = processedData.endDate;
         break;
       case "6m":
         sd = new Date(processedData.endDate);
-        sd.setDate(sd.getDate() - 180);
+        sd.setDate(sd.getDate() - 180); // 6 months
         ed = processedData.endDate;
         break;
       case "3m":
         sd = new Date(processedData.endDate);
-        sd.setDate(sd.getDate() - 90);
+        sd.setDate(sd.getDate() - 90); // 3 months
         ed = processedData.endDate;
         break;
-      case "ytd":
+      case "ytd": // 'Year to date' (from Jan 1st of year of last streaming entry)
         sd = new Date(`${new Date(processedData.endDate).getFullYear()}-1-1`);
         ed = processedData.endDate;
         break;
-      case "mtd":
+      case "mtd": // 'Month to date' (from start of month of last streaming entry)
         sd = new Date(`${new Date(processedData.endDate).getFullYear()}-${new Date(processedData.endDate).getMonth() + 1}-1`);
         ed = processedData.endDate;
         break;
@@ -61,8 +74,10 @@ document.querySelectorAll("#settings button").forEach(button => {
   })
 })
 
+// Obtain credentials for API calls
 await login();
 
+// Check if there is data cached in localStorage
 if (localStorage.hasOwnProperty("data")) {
   document.querySelector("#popup-container").style.display = "none";
   processedData = deserialize(localStorage.getItem("data"));
@@ -70,16 +85,22 @@ if (localStorage.hasOwnProperty("data")) {
   await refreshDashboard(processedData, processedData.startDate, processedData.endDate);
 }
 
+// Code for handling file selectors
+// First time users use this popup file selector to select the data file
 document.querySelector("#popup-file").accept = "application/json,text/plain";
 document.querySelector("#popup-file").addEventListener("change", async (e) => {
   document.querySelector("#download").style.display = "none";
+  // Get file and read text
   let file = e.target.files.item(0);
   let text = await file.text();
-  if (file.type === "application/json") { // todo: error handling
+
+  // todo: error handling
+  // Handle .json (todo: turn into .zip) of data from Spotify
+  if (file.type === "application/json") {
     await readData(text);
     processedData = await summaryStatistics(data);
     localStorage.setItem("data", serialize(processedData));
-  } else {
+  } else { // todo: error handle, alternatively, upload a .txt file with data downloaded from this site using the download functionality
     processedData = deserialize(text);
     localStorage.setItem("data", text);
   }
@@ -88,6 +109,7 @@ document.querySelector("#popup-file").addEventListener("change", async (e) => {
   document.querySelector("#download").style.display = "inline-block";
 });
 
+// Users use this selector to update data by uploading either data from Spotify or from this site
 document.querySelector("#file").accept = "application/json,text/plain";
 document.querySelector("#file").addEventListener("change", async (e) => {
   let file = e.target.files.item(0);
@@ -101,16 +123,25 @@ document.querySelector("#file").addEventListener("change", async (e) => {
     localStorage.setItem("data", text);
   }
 
+  // remove overall graphs so when refreshDashboard is called, graphs are replaced with new data
+  // the removal is important as the graph function will check if there are existing svg elements
+  // (if there are, only the date range of the functions will change; *data* won't change)
+  document.querySelector("#overall-graphs").innerHTML = "";
+
   await refreshDashboard(processedData, processedData.startDate, processedData.endDate);
   document.querySelector("#download").style.display = "inline-block";
 });
 
+// Parse data from Spotify
 async function readData(text) {
   data = await JSON.parse(text);
+
+  // Set fundamental attribute (stream date-time)
   for (let i = 0; i < data.length; i++) {
     data[i].endTime = new Date(data[i].endTime);
   }
 
+  // Remove all streams that were less than 30s (clean data)
   for (let i = data.length - 1; i >= 0; i--) {
     if (data[i].msPlayed < 30000) {
       data.splice(i, 1);
@@ -164,7 +195,7 @@ async function summaryStatistics(data) {
   document.querySelector("#progress").max = result.songStats.size;
   document.querySelector("#popup-progress").max = result.songStats.size;
   for (let [i, s] of result.songStats) {
-    if (!b) {
+    if (EXCEEDED_REQUEST_LIMIT) {
       break;
     }
     httpGetAsync("https://api.spotify.com/v1/search?q=" + encodeURIComponent("artist:" + s.artistName + " track:" + s.trackName) + "&type=track&limit=1", (t) => {
@@ -220,7 +251,7 @@ async function summaryStatistics(data) {
   document.querySelector("#progress").max = result.artistStats.size;
   document.querySelector("#popup-progress").max = result.artistStats.size;
   for (let [i, a] of result.artistStats) {
-    if (!b) {
+    if (EXCEEDED_REQUEST_LIMIT) {
       break;
     }
     httpGetAsync("https://api.spotify.com/v1/search?q=" + encodeURIComponent("artist:" + a.name) + "&type=artist&limit=1", (t) => {
@@ -278,7 +309,7 @@ async function summaryStatistics(data) {
   let songIDList = Array.from(result.songStats.keys());
   let songList = Array.from(result.songStats.values());
   for (let i = 0; i < songList.length; i += 50) {
-    if (!b) {
+    if (EXCEEDED_REQUEST_LIMIT) {
       break;
     }
     let idList = "";
@@ -333,6 +364,8 @@ async function refreshDashboard(d, dateMin, dateMax) {
   document.querySelector("#overall #overall-days").innerText = `${commafy(getLaterDate([...data.activeDays], max) - getEarlierDate([...data.activeDays], min))} / ${commafy(Math.min(data.accountAge, Math.round((max - min) / (1000.0 * 3600.0 * 24.0))))}`;
   document.querySelector("#overall #overall-avg-session").innerText = `${commafy(Math.ceil(parseFloat(document.querySelector("#overall #overall-minutes").innerText.replaceAll(",", "")) / (getLaterDate([...data.activeDays], max) - getEarlierDate([...data.activeDays], min))))}`;
 
+  checkOverallGraphs(data, min, max);
+
   let sortedArtists = [...data.artistStats.values()].toSorted((a, b) => {
     return getStreamStats(b, "msPlayed", min, max) - getStreamStats(a, "msPlayed", min, max)
   });
@@ -369,6 +402,10 @@ async function refreshDashboard(d, dateMin, dateMax) {
     item.addEventListener("click", () => moreInfo("song", data, sortedSongs[i].internalID));
     document.querySelector("#favorites-songs-table").appendChild(item);
   }
+}
+
+function checkOverallGraphs(data, min, max) {
+
 }
 
 function getStreamStats(item, property, min, max) {
@@ -585,6 +622,8 @@ function httpGetAsync(theUrl, callback) {
       callback(xmlHttp.responseText);
     } else if (xmlHttp.status === 429) {
       console.error(xmlHttp.status, ":\n", xmlHttp.responseText);
+      EXCEEDED_REQUEST_LIMIT = true;
+      window.alert("Exceeded API request limit, please try again later.");
       await sleep(2000);
     }
   }
