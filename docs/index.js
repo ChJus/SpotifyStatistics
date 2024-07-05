@@ -376,40 +376,95 @@ function getStreamStats(item, property, min, max) {
 
 let previouslyViewed = [];
 
+document.querySelector("#popup-artist-back-wrapper").addEventListener("click", () => {
+  previouslyViewed.pop();
+  let item = previouslyViewed.pop();
+  if (item.type === "song") {
+    document.querySelector("#popup-artist-wrapper").style.display = "none";
+  }
+  moreInfo(item.type, item.data, item.id);
+})
+
+document.querySelector("#popup-song-back-wrapper").addEventListener("click", () => {
+  previouslyViewed.pop();
+  let item = previouslyViewed.pop();
+  if (item.type === "artist") {
+    document.querySelector("#popup-song-wrapper").style.display = "none";
+  }
+  moreInfo(item.type, item.data, item.id);
+})
+
+document.querySelector("#popup-artist-close-wrapper").addEventListener("click", () => {
+  document.querySelector("#popup-artist-wrapper").style.display = "none";
+  document.querySelector("#popup-song-wrapper").style.display = "none";
+})
+
+document.querySelector("#popup-song-close-wrapper").addEventListener("click", () => {
+  document.querySelector("#popup-artist-wrapper").style.display = "none";
+  document.querySelector("#popup-song-wrapper").style.display = "none";
+})
+
 function moreInfo(type, data, id) {
+  if (previouslyViewed.length > 0) {
+    document.querySelector(`#popup-${type}-back-wrapper`).style.display = "block";
+  } else {
+    document.querySelector(`#popup-${type}-back-wrapper`).style.display = "none";
+  }
+  if ((previouslyViewed.length > 0 && previouslyViewed[previouslyViewed.length - 1].id !== id) || previouslyViewed.length === 0) {
+    previouslyViewed.push({type: type, data: data, id: id})
+  }
   if (type === "artist") {
     let artist = data.artistStats.get(id);
     if (artist === undefined) return;
 
-    document.querySelector("#favorites-popup-artist-wrapper").style.display = "flex";
-    document.querySelector("#favorites-popup-artist-left-image-wrapper img").src = `${artist.image !== null ? artist.image : ''}`;
-    document.querySelector("#favorites-popup-artist-name").innerText = `${artist.name}`;
-    document.querySelector("#favorites-popup-artist-stats").innerText = `${commafy(Math.round(getStreamStats(artist, "msPlayed", data.startDate, data.endDate) / 1000.0 / 60.0))} minutes | ${commafy(getStreamStats(artist, "streams", data.startDate, data.endDate))} streams`;
+    document.querySelector("#popup-artist-wrapper").style.display = "flex";
+    document.querySelector("#popup-artist-left-image-wrapper img").src = `${artist.image !== null ? artist.image : ''}`;
+    document.querySelector("#popup-artist-name").innerText = `${artist.name}`;
+    document.querySelector("#popup-artist-stats").innerText = `${commafy(Math.round(getStreamStats(artist, "msPlayed", data.startDate, data.endDate) / 1000.0 / 60.0))} minutes | ${commafy(getStreamStats(artist, "streams", data.startDate, data.endDate))} streams`;
 
-    let remove = document.querySelectorAll("#favorites-popup-songs-table > tr");
+    let remove = document.querySelectorAll("#popup-songs-table > tr");
     for (let i = remove.length - 1; i >= 0; i--) {
       remove[i].parentNode.removeChild(remove[i]);
     }
 
-    let templateSongs = document.querySelector("#favorites-popup-songs-row-template").content;
+    let templateSongs = document.querySelector("#popup-songs-row-template").content;
     let sortedSongs = [...structuredClone(artist.songs)];
-    sortedSongs.toSorted((a, b) => {
+    sortedSongs.sort((a, b) => {
       return getStreamStats(data.songStats.get(b), "msPlayed", data.startDate, data.endDate) - getStreamStats(data.songStats.get(a), "msPlayed", data.startDate, data.endDate)
     })
 
     for (let i = 0; i < sortedSongs.length; i++) {
       let song = data.songStats.get(sortedSongs[i]);
-      // item.addEventListener("click", () => moreInfo("artist", data, sortedArtists[i].name));
       templateSongs.querySelectorAll("tr td")[0].innerText = `${(i + 1)}`;
       templateSongs.querySelector(".img-div img").src = `${song.image !== null ? song.image : ''}`;
       templateSongs.querySelector(".text-main").innerText = `${song.trackName}`;
       templateSongs.querySelector(".text-sub").innerText = `${commafy(Math.round(getStreamStats(song, "msPlayed", data.startDate, data.endDate) / 1000.0 / 60.0))} minutes | ${commafy(getStreamStats(song, "streams", data.startDate, data.endDate))} streams`;
       let item = document.importNode(templateSongs.querySelector("tr"), true);
       item.addEventListener("click", () => moreInfo("song", data, song.internalID));
-      document.querySelector("#favorites-popup-songs-table").appendChild(item);
+      document.querySelector("#popup-songs-table").appendChild(item);
     }
   } else {
     let song = data.songStats.get(id);
+    if (song === undefined) return;
+
+    document.querySelector("#popup-song-wrapper").style.display = "flex";
+    document.querySelector("#popup-song-left-image-wrapper img").src = `${song.image !== null ? song.image : ''}`;
+    document.querySelector("#popup-song-name").innerText = `${song.trackName}`;
+    document.querySelector("#popup-song-stats").innerText = `${commafy(Math.round(getStreamStats(song, "msPlayed", data.startDate, data.endDate) / 1000.0 / 60.0))} minutes | ${commafy(getStreamStats(song, "streams", data.startDate, data.endDate))} streams`;
+    document.querySelector("#song-acousticness").innerText = `${song.acousticness}`;
+    document.querySelector("#song-danceability").innerText = `${song.danceability}`;
+    document.querySelector("#song-energy").innerText = `${song.energy}`;
+    document.querySelector("#song-speechiness").innerText = `${song.speechiness}`;
+    document.querySelector("#song-valence").innerText = `${song.valence}`;
+    document.querySelector("#song-tempo").innerText = `${Math.round(song.tempo)}`;
+    if (song.key === -1) {
+      document.querySelector("#song-key").style.display = "none";
+    } else {
+      document.querySelector("#song-key").style.display = "block";
+      let keys = ['C', 'C#/D♭', 'D', 'D#/E♭', 'E', 'E#/F♭', 'F', 'F#/G♭', 'G', 'G#/A♭', 'A', 'A#/B♭', 'B', 'B#/C♭'];
+      document.querySelector("#song-key").innerText = `${keys[song.key]}`;
+    }
+    document.querySelector("#song-time-signature").innerText = `${song.time_signature}/4`;
   }
 }
 

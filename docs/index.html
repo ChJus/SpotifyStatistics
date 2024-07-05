@@ -60,58 +60,7 @@
   <div><span id="overall-avg-session">__</span> minutes / session</div>
 </div>
 <div id="favorites">
-  <div id="favorites-popup-artist-wrapper">
-    <div id="favorites-popup-artist">
-      <div id="favorites-popup-artist-panel">
-        <div id="favorites-popup-artist-back-wrapper">
-          <img src="assets/back.svg" alt=""/>
-        </div>
-        <div id="favorites-popup-artist-close-wrapper">
-          <img src="assets/close.svg" alt=""/>
-        </div>
-      </div>
-      <div id="favorites-popup-artist-left">
-        <div id="favorites-popup-artist-left-image-wrapper">
-          <img src="" alt=""/>
-        </div>
-        <div id="favorites-popup-artist-left-text-block">
-          <div id="favorites-popup-artist-name"></div>
-          <div id="favorites-popup-artist-stats"></div>
-        </div>
-      </div>
-      <div id="favorites-popup-artist-right">
-        <table id="favorites-popup-songs-table">
-          <tr>
-            <th>No.</th>
-            <th>Song</th>
-          </tr>
-          <template id="favorites-popup-songs-row-template">
-            <tr>
-              <td></td>
-              <td>
-                <div class="img-div">
-                  <img src="" alt=""/>
-                </div>
-                <div class="text-div">
-                  <div class="text-main"></div>
-                  <div class="text-sub"></div>
-                </div>
-              </td>
-            </tr>
-          </template>
-        </table>
-        <div id="favorites-popup-graph-wrapper">
-          <svg id="favorites-popup-graph"></svg>
-        </div>
-      </div>
-    </div>
-    <!--
-    Artist name + picture, streams + listening time,
-    table with all songs w/ corresponding stream count and time,
-    graph of all streams over time (always do all time, highlight range based on selection),
-    -->
-  </div>
-  <div id="favorites-popup-song" style="display: none;"></div>
+  <div id="favorites-popup-song"></div>
   <div id="favorites-artists">
     <div id="favorites-artists-header">
       <h3>Top artists</h3>
@@ -166,6 +115,100 @@
       </table>
     </div>
   </div>
+</div>
+<div id="popup-artist-wrapper">
+  <div id="popup-artist">
+    <div id="popup-artist-panel">
+      <div id="popup-artist-back-wrapper">
+        <img src="assets/back.svg" alt=""/>
+      </div>
+      <div id="popup-artist-close-wrapper">
+        <img src="assets/close.svg" alt=""/>
+      </div>
+    </div>
+    <div id="popup-artist-left">
+      <div id="popup-artist-left-image-wrapper">
+        <img src="" alt=""/>
+      </div>
+      <div id="popup-artist-left-text-block">
+        <div id="popup-artist-name"></div>
+        <div id="popup-artist-stats"></div>
+      </div>
+    </div>
+    <div id="popup-artist-right">
+      <table id="popup-songs-table">
+        <tr>
+          <th>No.</th>
+          <th>Song</th>
+        </tr>
+        <template id="popup-songs-row-template">
+          <tr>
+            <td></td>
+            <td>
+              <div class="img-div">
+                <img src="" alt=""/>
+              </div>
+              <div class="text-div">
+                <div class="text-main"></div>
+                <div class="text-sub"></div>
+              </div>
+            </td>
+          </tr>
+        </template>
+      </table>
+      <div id="popup-artist-graph-wrapper">
+        <svg id="popup-artist-graph"></svg>
+      </div>
+    </div>
+  </div>
+  <!--
+  graph of all streams over time (always do all time, highlight range based on selection),
+  -->
+</div>
+<div id="popup-song-wrapper">
+  <div id="popup-song">
+    <div id="popup-song-panel">
+      <div id="popup-song-back-wrapper">
+        <img src="assets/back.svg" alt=""/>
+      </div>
+      <div id="popup-song-close-wrapper">
+        <img src="assets/close.svg" alt=""/>
+      </div>
+    </div>
+    <div id="popup-song-left">
+      <div id="popup-song-left-image-wrapper">
+        <img src="" alt=""/>
+      </div>
+      <div id="popup-song-left-text-block">
+        <div id="popup-song-name"></div>
+        <div id="popup-song-stats"></div>
+      </div>
+    </div>
+    <div id="popup-song-right">
+      <div id="song-characteristics">
+        <div class="song-characteristics-section">
+          <div><span id="song-acousticness">__</span> acousticness</div> <!-- (electronic) 0-1 (acoustic) -->
+          <div><span id="song-danceability">__</span> danceability</div> <!-- (not dance) 0-1 (dance) -->
+          <div><span id="song-speechiness">__</span> speechiness</div> <!-- (non-rap) 0-1 (rap) -->
+        </div>
+        <div class="song-characteristics-section">
+          <div><span id="song-energy">__</span> energy</div> <!-- (sad/negative) 0-1 (happy/positive) -->
+          <div><span id="song-valence">__</span> valence</div> <!-- (sad/negative) 0-1 (happy/positive) -->
+        </div>
+        <div class="song-characteristics-section">
+          <div><span id="song-tempo">__ / __</span> BPM</div>
+          <div><span id="song-key">__</span> key</div>
+          <div><span id="song-time-signature">__</span> time signature</div>
+        </div>
+      </div>
+      <div id="popup-song-graph-wrapper">
+        <svg id="popup-song-graph"></svg>
+      </div>
+    </div>
+  </div>
+  <!--
+  graph of all streams over time (always do all time, highlight range based on selection),
+  -->
 </div>
 </body>
 <script type="module" src="index.js"></script>

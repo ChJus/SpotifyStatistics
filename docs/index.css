@@ -362,7 +362,7 @@ body {
   }
 }
 
-#favorites-popup-artist-wrapper {
+#popup-artist-wrapper {
   left: 0;
   top: 0;
   display: none;
@@ -376,7 +376,7 @@ body {
   opacity: 1;
   backdrop-filter: blur(4px) brightness(40%);
 
-  #favorites-popup-artist-panel {
+  #popup-artist-panel {
     display: flex;
     position: absolute;
     top: 1vw;
@@ -405,9 +405,13 @@ body {
       cursor: pointer;
       filter: invert(1);
     }
+
+    #popup-artist-close-wrapper {
+      margin-left: auto;
+    }
   }
 
-  #favorites-popup-artist {
+  #popup-artist {
     background-color: var(--secondary-background-darker);
     border-radius: 10px;
     filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.4));
@@ -419,7 +423,7 @@ body {
     height: 100%;
     margin: auto auto;
 
-    #favorites-popup-artist-left {
+    #popup-artist-left {
       @media only screen and (min-width: 530px) {
         width: 30%;
         height: 100%;
@@ -431,7 +435,7 @@ body {
       min-width: 150px;
       max-width: fit-content;
 
-      #favorites-popup-artist-left-image-wrapper {
+      #popup-artist-left-image-wrapper {
         @media only screen and (min-width: 530px) {
           width: 100px;
           height: 100px;
@@ -450,16 +454,16 @@ body {
         }
       }
 
-      #favorites-popup-artist-left-text-block {
+      #popup-artist-left-text-block {
         padding: 1vh 2vw;
 
-        #favorites-popup-artist-name {
+        #popup-artist-name {
           font-size: 14pt;
           font-weight: bold;
           text-align: center;
         }
 
-        #favorites-popup-artist-stats {
+        #popup-artist-stats {
           margin-top: 1vw;
           font-size: 10pt;
           font-weight: 400;
@@ -468,7 +472,7 @@ body {
       }
     }
 
-    #favorites-popup-artist-right {
+    #popup-artist-right {
       @media only screen and (min-width: 530px) {
         width: 65%;
         height: 100%;
@@ -483,7 +487,7 @@ body {
       display: block;
       max-width: 500px;
 
-      #favorites-popup-songs-table {
+      #popup-songs-table {
         font-size: 12pt;
         width: 100%;
         border-collapse: collapse;
@@ -573,8 +577,167 @@ body {
         }
       }
 
-      #favorites-popup-graph-wrapper {
-        #favorites-popup-graph {
+      #popup-artist-graph-wrapper {
+        #popup-artist-graph {
+        }
+      }
+    }
+  }
+}
+
+#popup-song-wrapper {
+  left: 0;
+  top: 0;
+  display: none;
+  justify-content: center;
+  align-items: center;
+  position: fixed;
+  padding: 30px;
+  z-index: 1000;
+  width: 100vw;
+  height: 100vh;
+  opacity: 1;
+  backdrop-filter: blur(4px) brightness(40%);
+
+  #popup-song-panel {
+    display: flex;
+    position: absolute;
+    top: 1vw;
+    width: calc(100% - 4vw);
+    justify-content: space-between;
+    justify-items: center;
+    margin: 15px;
+    height: 30px;
+    z-index: 1000;
+
+    div {
+      transition: 300ms;
+      width: fit-content;
+      height: auto;
+      border-radius: 50%;
+      background-color: var(--background-color);
+
+      img {
+        width: 24px;
+        height: auto;
+        margin: 3px;
+      }
+    }
+
+    div:hover {
+      cursor: pointer;
+      filter: invert(1);
+    }
+
+    #popup-song-close-wrapper {
+      margin-left: auto;
+    }
+  }
+
+  #popup-song {
+    background-color: var(--secondary-background-darker);
+    border-radius: 10px;
+    filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.4));
+    justify-content: space-evenly;
+    display: flex;
+    padding: 4vw 2vw;
+    width: fit-content;
+    flex-wrap: wrap;
+    height: 100%;
+    margin: auto auto;
+
+    #popup-song-left {
+      @media only screen and (min-width: 670px) {
+        width: 30%;
+        height: 100%;
+      }
+      @media only screen and (max-width: 670px) {
+        width: 80%;
+        height: fit-content;
+      }
+      min-width: 150px;
+      max-width: fit-content;
+
+      #popup-song-left-image-wrapper {
+        @media only screen and (min-width: 670px) {
+          width: 100px;
+          height: 100px;
+        }
+        @media only screen and (max-width: 670px) {
+          width: 75px;
+          height: 75px;
+        }
+        display: block;
+        border-radius: 50%;
+        overflow: hidden;
+        margin: 1vh auto;
+
+        img {
+          width: 100%;
+        }
+      }
+
+      #popup-song-left-text-block {
+        padding: 1vh 2vw;
+
+        #popup-song-name {
+          font-size: 14pt;
+          font-weight: bold;
+          text-align: center;
+        }
+
+        #popup-song-stats {
+          margin-top: 1vw;
+          font-size: 10pt;
+          font-weight: 400;
+          color: var(--secondary-foreground);
+        }
+      }
+    }
+
+    #popup-song-right {
+      @media only screen and (min-width: 670px) {
+        width: 65%;
+        height: 100%;
+      }
+      @media only screen and (max-width: 670px) {
+        min-width: 80%;
+        max-width: fit-content;
+        margin: auto;
+        overflow-y: auto;
+        max-height: calc(70% - 70px);
+      }
+      display: block;
+      max-width: 500px;
+
+      #song-characteristics {
+        display: flex;
+        padding: 20px;
+        justify-content: space-evenly;
+        flex-wrap: wrap;
+        width: 100%;
+
+        .song-characteristics-section {
+          width: 100%;
+          display: flex;
+          justify-content: space-evenly;
+
+          div {
+            padding: 2vw;
+            display: block;
+            width: fit-content;
+
+            span {
+              font-size: 17pt;
+              font-weight: bold;
+              display: block;
+            }
+          }
+        }
+      }
+
+      #popup-song-graph-wrapper {
+        #popup-song-graph {
         }
       }
     }
