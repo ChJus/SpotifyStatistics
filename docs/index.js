@@ -416,12 +416,14 @@ async function refreshDashboard(d, dateMin, dateMax) {
     remove2[i].parentNode.removeChild(remove2[i]);
   }
 
+  // Display top 50 songs and artists
   for (let i = 0; i < 50; i++) {
     templateArtists.querySelectorAll("tr td")[0].innerText = `${(i + 1)}`;
     templateArtists.querySelector(".img-div img").src = `${sortedArtists[i].image !== null ? sortedArtists[i].image : ''}`;
     templateArtists.querySelector(".text-main").innerText = `${sortedArtists[i].name}`;
     templateArtists.querySelector(".text-sub").innerText = `${commafy(Math.round(getStreamStats(sortedArtists[i], "msPlayed", min, max) / 1000.0 / 60.0))} minutes | ${commafy(getStreamStats(sortedArtists[i], "streams", min, max))} streams`;
 
+    // Add event listener to display popup on click, and append to DOM
     let item = document.importNode(templateArtists.querySelector("tr"), true);
     item.addEventListener("click", () => moreInfo("artist", data, sortedArtists[i].name));
     document.querySelector("#favorites-artists-table").appendChild(item);
@@ -441,6 +443,7 @@ function checkOverallGraphs(data, min, max) {
 
 }
 
+// Get streaming statistics in a time range (as info is stored cumulatively)
 function getStreamStats(item, property, min, max) {
   let i = item.streamHistory.findIndex((d) => {
     return new Date(d.date) - new Date(min) >= 0
@@ -453,8 +456,10 @@ function getStreamStats(item, property, min, max) {
   return item.streamHistory[j][property] - item.streamHistory[i][property];
 }
 
+// History (go back) functionality
 let previouslyViewed = [];
 
+// Handle history feature call
 document.querySelector("#popup-artist-back-wrapper").addEventListener("click", () => {
   previouslyViewed.pop();
   let item = previouslyViewed.pop();
@@ -467,6 +472,7 @@ document.querySelector("#popup-song-back-wrapper").addEventListener("click", () 
   moreInfo(item.type, item.data, item.id);
 })
 
+// Handle close popup
 document.querySelector("#popup-artist-close-wrapper").addEventListener("click", () => {
   document.querySelector("#popup-artist-wrapper").style.display = "none";
   document.querySelector("#popup-song-wrapper").style.display = "none";
@@ -477,15 +483,20 @@ document.querySelector("#popup-song-close-wrapper").addEventListener("click", ()
   document.querySelector("#popup-song-wrapper").style.display = "none";
 })
 
+// Display popup information
 function moreInfo(type, data, id) {
-  if (previouslyViewed.length > 0) {
+  if (previouslyViewed.length > 0) { // Only allow go-back button if there _is_ history
     document.querySelector(`#popup-${type}-back-wrapper`).style.display = "block";
   } else {
     document.querySelector(`#popup-${type}-back-wrapper`).style.display = "none";
   }
+
+  // Push to history if not duplicate of most recent item
   if ((previouslyViewed.length > 0 && previouslyViewed[previouslyViewed.length - 1].id !== id) || previouslyViewed.length === 0) {
     previouslyViewed.push({type: type, data: data, id: id})
   }
+
+  // Display information (artist | song)
   if (type === "artist") {
     let artist = data.artistStats.get(id);
     if (artist === undefined) return;
@@ -556,6 +567,7 @@ function moreInfo(type, data, id) {
     }
     document.querySelector("#song-time-signature").innerText = `${song.time_signature}/4`;
 
+    // Color-code [0, 1] values based on their meaning.
     let inferno = d3.scaleSequential(d3.interpolateInferno);
     let color = hexToRgb(inferno(song.energy));
     let sf = 255.0 / ((color.r + color.g + color.b) / 3.0);
@@ -576,6 +588,8 @@ function moreInfo(type, data, id) {
   }
 }
 
+// Helper functions
+// Make foreground color darker if it's too bright.
 function contrastAdjust(color) {
   if ((color.r + color.g + color.b) / 3.0 > 150) {
     color.r *= 0.7;
@@ -585,6 +599,7 @@ function contrastAdjust(color) {
   return `rgb(${color.r}, ${color.g}, ${color.b})`;
 }
 
+// Helper function to avoid color saturation when modifying color brightness
 function redistribute(c, sf) {
   let r = c.r * sf, g = c.g * sf, b = c.b * sf;
   let threshold = 255.999;
@@ -601,6 +616,7 @@ function redistribute(c, sf) {
   return {r: Math.floor(gray + x * r), g: Math.floor(gray + x * g), b: Math.floor(gray + x * b)}
 }
 
+// Convert hex string (#DDDDDD) to rgb {r: , g: , b: }
 function hexToRgb(hex) {
   let result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
   return result ? {
@@ -610,10 +626,12 @@ function hexToRgb(hex) {
   } : null;
 }
 
+// Make displayed numbers 'nicer' by adding commas, supports decimals
 function commafy(x) {
   return x.toString().replace(/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/g, ",");
 }
 
+// Gets the index of the first date in an array that is earlier than a given date
 function getEarlierDate(arr, date) {
   let i = arr.findIndex((d) => {
     return new Date(d) - new Date(date) >= 0
@@ -621,6 +639,7 @@ function getEarlierDate(arr, date) {
   return i >= 0 ? i : 0;
 }
 
+// Gets the index of the first date in an array that is later than a given date
 function getLaterDate(arr, date) {
   let index = arr.findLastIndex((d) => {
     return new Date(d) - new Date(date) <= 0
@@ -628,10 +647,12 @@ function getLaterDate(arr, date) {
   return index >= 0 ? index : arr.length - 1;
 }
 
+// Returns simplified string representation of date (yyyy-mm-dd)
 function approximateDate(d) {
   return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate();
 }
 
+// Converts string to a hash
 function stringHash(string) {
   let hash = 0;
   if (string.length === 0) return hash;
@@ -644,6 +665,7 @@ function stringHash(string) {
   return hash;
 }
 
+// API requests helper
 function httpGetAsync(theUrl, callback) {
   let xmlHttp = new XMLHttpRequest();
   xmlHttp.open("GET", theUrl, true); // true for asynchronous
@@ -662,10 +684,12 @@ function httpGetAsync(theUrl, callback) {
   }
 }
 
+// Delay function (like Thread.sleep)
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+// Obtain temporary API credentials
 function login() {
   let xmlHttp = new XMLHttpRequest();
   xmlHttp.open("POST", "https://accounts.spotify.com/api/token", true); // true for asynchronous
@@ -680,11 +704,13 @@ function login() {
   }
 }
 
+// Download computed data (which user can upload to analyze)
 function download() {
   let blob = new Blob([serialize(processedData)], {type: "text/plain;charset=utf-8"});
   saveAs(blob, "data.txt");
 }
 
+// Helper function to stringify/json-fy Maps and Sets (which aren't supported)
 function stringifyReplacer(key, value) {
   if (typeof value === "object" && value !== null) {
     if (value instanceof Map) {
@@ -710,6 +736,7 @@ function stringifyReplacer(key, value) {
   return value;
 }
 
+// Helper function to stringify/serialize computed data
 function parseReviver(key, value) {
   if (typeof value === "object" && value !== null) {
     if ("_meta" in value) {
