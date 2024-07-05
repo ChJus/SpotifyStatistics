@@ -465,7 +465,59 @@ function moreInfo(type, data, id) {
       document.querySelector("#song-key").innerText = `${keys[song.key]}`;
     }
     document.querySelector("#song-time-signature").innerText = `${song.time_signature}/4`;
+
+    let inferno = d3.scaleSequential(d3.interpolateInferno);
+    let color = hexToRgb(inferno(song.energy));
+    let sf = 255.0 / ((color.r + color.g + color.b) / 3.0);
+    color = redistribute(color, sf * 0.93);
+    document.querySelector("#song-energy").parentNode.style.color = `${contrastAdjust(hexToRgb(inferno(song.energy)))}`;
+    document.querySelector("#song-energy").parentNode.style.backgroundColor = `rgb(${color.r}, ${color.g}, ${color.b})`;
+
+    let valence = d3.interpolateViridis;
+    color = hexToRgb(valence(song.valence));
+    sf = 255.0 / ((color.r + color.g + color.b) / 3.0);
+    color = redistribute(color, sf * 0.93);
+    document.querySelector("#song-valence").parentNode.style.color = `${valence(song.valence)}`;
+    document.querySelector("#song-valence").parentNode.style.backgroundColor = `rgb(${color.r}, ${color.g}, ${color.b})`;
+
+    document.querySelector("#song-acousticness").parentNode.style.opacity = `${0.6 + song.acousticness * 0.4}`;
+    document.querySelector("#song-danceability").parentNode.style.opacity = `${0.6 + song.danceability * 0.4}`;
+    document.querySelector("#song-speechiness").parentNode.style.opacity = `${0.6 + song.speechiness * 0.4}`;
   }
+}
+
+function contrastAdjust(color) {
+  if ((color.r + color.g + color.b) / 3.0 > 150) {
+    color.r *= 0.7;
+    color.g *= 0.7;
+    color.b *= 0.7;
+  }
+  return `rgb(${color.r}, ${color.g}, ${color.b})`;
+}
+
+function redistribute(c, sf) {
+  let r = c.r * sf, g = c.g * sf, b = c.b * sf;
+  let threshold = 255.999;
+  let m = Math.max(r, g, b)
+  if (m <= threshold) {
+    return {r: Math.floor(r), g: Math.floor(g), b: Math.floor(b)}
+  }
+  let total = r + g + b
+  if (total >= 3 * threshold) {
+    return {r: Math.floor(threshold), g: Math.floor(threshold), b: Math.floor(threshold)}
+  }
+  let x = (3 * threshold - total) / (3 * m - total)
+  let gray = threshold - x * m
+  return {r: Math.floor(gray + x * r), g: Math.floor(gray + x * g), b: Math.floor(gray + x * b)}
+}
+
+function hexToRgb(hex) {
+  let result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result ? {
+    r: parseInt(result[1], 16),
+    g: parseInt(result[2], 16),
+    b: parseInt(result[3], 16)
+  } : null;
 }
 
 function commafy(x) {
