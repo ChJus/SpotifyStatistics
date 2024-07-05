@@ -126,7 +126,7 @@ document.querySelector("#file").addEventListener("change", async (e) => {
   // remove overall graphs so when refreshDashboard is called, graphs are replaced with new data
   // the removal is important as the graph function will check if there are existing svg elements
   // (if there are, only the date range of the functions will change; *data* won't change)
-  document.querySelector("#overall-graphs").innerHTML = "";
+  document.querySelector("#overall-graphs svg").remove();
 
   await refreshDashboard(processedData, processedData.startDate, processedData.endDate);
   document.querySelector("#download").style.display = "inline-block";
@@ -363,6 +363,7 @@ async function summaryStatistics(data) {
   return result;
 }
 
+// Resize graphs with timeout to avoid lagging and abundantly refreshing interface
 let windowResizeTimeout = null;
 window.addEventListener('resize', async () => {
   if (windowResizeTimeout) clearTimeout(windowResizeTimeout);
@@ -370,6 +371,11 @@ window.addEventListener('resize', async () => {
     document.querySelector("#settings .tab.active").click();
   }, 50);
 }, true);
+
+// Update graphs on change of grouping preference
+document.querySelector("#overall-graphs-group-preference").addEventListener("change", (e) => {
+  document.querySelector("#settings .tab.active").click();
+})
 
 // Update all information displays based on data and time range
 async function refreshDashboard(d, dateMin, dateMax) {
@@ -485,7 +491,19 @@ function refreshOverallStreamsGraph(data, min, max) {
 
   // %j: by day, %U: by week, %m: by month
   // Note %Y groups by year — this helps prevent unintended grouping of days in different years
-  let group = d3.utcFormat("%m %Y");
+  let group;
+  switch (document.querySelector("#overall-graphs-group-preference").value) {
+    case "d":
+      group = d3.utcFormat("%j %Y");
+      break;
+    case "w":
+      group = d3.utcFormat("%U %Y");
+      break;
+    case "m":
+      group = d3.utcFormat("%m %Y");
+      break;
+  }
+
   let nest = [...d3.group(dataset, d => group(new Date(d.date))).values()];
   dataset = [];
   for (let i = 1; i < nest.length; i++) {
@@ -518,7 +536,7 @@ function refreshOverallStreamsGraph(data, min, max) {
   let yAxis = d3.axisLeft().scale(y).ticks(height / 40);
 
   // If the graphs exist, just modify their time range
-  if (document.querySelector("#overall-graphs").children.length > 0) {
+  if (document.querySelector("#overall-graphs svg") !== null) {
     svg = d3.select("#overall-graphs svg")
       .attr("width", width + margin.left + margin.right)
     update(dataset);
