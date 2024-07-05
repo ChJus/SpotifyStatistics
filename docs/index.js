@@ -392,9 +392,13 @@ function moreInfo(type, data, id) {
     }
 
     let templateSongs = document.querySelector("#favorites-popup-songs-row-template").content;
+    let sortedSongs = [...structuredClone(artist.songs)];
+    sortedSongs.toSorted((a, b) => {
+      return getStreamStats(data.songStats.get(b), "msPlayed", data.startDate, data.endDate) - getStreamStats(data.songStats.get(a), "msPlayed", data.startDate, data.endDate)
+    })
 
-    for (let i = 0; i < artist.songs.size; i++) {
-      let song = data.songStats.get([...artist.songs][i]);
+    for (let i = 0; i < sortedSongs.length; i++) {
+      let song = data.songStats.get(sortedSongs[i]);
       // item.addEventListener("click", () => moreInfo("artist", data, sortedArtists[i].name));
       templateSongs.querySelectorAll("tr td")[0].innerText = `${(i + 1)}`;
       templateSongs.querySelector(".img-div img").src = `${song.image !== null ? song.image : ''}`;

@@ -416,22 +416,34 @@ body {
     padding: 4vw 2vw;
     width: fit-content;
     flex-wrap: wrap;
-    height: calc(95% - 30px);
+    height: 100%;
     margin: auto auto;
 
     #favorites-popup-artist-left {
-      width: 30%;
+      @media only screen and (min-width: 530px) {
+        width: 30%;
+        height: 100%;
+      }
+      @media only screen and (max-width: 530px) {
+        width: 80%;
+        height: fit-content;
+      }
       min-width: 150px;
       max-width: fit-content;
-      height: 100%;
 
       #favorites-popup-artist-left-image-wrapper {
-        width: 100px;
-        height: 100px;
+        @media only screen and (min-width: 530px) {
+          width: 100px;
+          height: 100px;
+        }
+        @media only screen and (max-width: 530px) {
+          width: 75px;
+          height: 75px;
+        }
         display: block;
         border-radius: 50%;
         overflow: hidden;
-        margin: 2vw auto;
+        margin: 1vh auto;
 
         img {
           width: 100%;
@@ -439,7 +451,7 @@ body {
       }
 
       #favorites-popup-artist-left-text-block {
-        padding: 2vw;
+        padding: 1vh 2vw;
 
         #favorites-popup-artist-name {
           font-size: 14pt;
@@ -457,9 +469,18 @@ body {
     }
 
     #favorites-popup-artist-right {
-      width: 65%;
+      @media only screen and (min-width: 530px) {
+        width: 65%;
+        height: 100%;
+      }
+      @media only screen and (max-width: 530px) {
+        min-width: 80%;
+        max-width: fit-content;
+        margin: auto;
+        overflow-y: auto;
+        max-height: calc(70% - 70px);
+      }
       display: block;
-      height: 100%;
       max-width: 500px;
 
       #favorites-popup-songs-table {
@@ -510,8 +531,14 @@ body {
           display: flex;
 
           .img-div {
-            width: 50px;
-            height: 50px;
+            @media only screen and (min-width: 530px) {
+              width: 50px;
+              height: 50px;
+            }
+            @media only screen and (max-width: 530px) {
+              width: 40px;
+              height: 40px;
+            }
             display: block;
             border-radius: 50%;
             overflow-y: hidden;

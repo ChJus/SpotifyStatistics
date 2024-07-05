@@ -16,7 +16,8 @@ time
 
 ❌ Colored calendar showing listening time by day
 
-❌ Genre and song analysis breakdown
+❌ Genre and song analysis breakdown (songs on scale for each factor, and 2-dimensional comparison with selectable
+factors)
 
 ❌ Quiz (5-second snippets and make user guess song name)
 
