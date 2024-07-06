@@ -712,17 +712,24 @@ svg {
 #overall-graphs, #genre-analysis {
   position: relative;
 
-  #overall-graph-tooltip {
+  #overall-graph-tooltip, #oneD-song-genre-force-tooltip {
     display: none;
     opacity: 0;
     background-color: var(--background-color);
     padding: 10px 15px;
     font-size: 10pt;
     z-index: 100;
-    width: max-content;
     border: 1px solid var(--foreground-color);
     transition: 200ms;
     pointer-events: none;
+  }
+
+  #overall-graph-tooltip {
+    width: max-content;
+  }
+
+  #oneD-song-genre-force-tooltip {
+    max-width: 300px;
   }
 
   .preference-panel {
@@ -762,6 +769,7 @@ svg {
 }
 
 #genre-analysis svg {
+  /* Make force graph vertical if width is too small */
   width: 100%;
   @media only screen and (min-width: 700px) {
     height: 70vh;

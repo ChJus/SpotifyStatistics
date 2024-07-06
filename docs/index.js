@@ -568,10 +568,10 @@ function refreshOverallStreamsGraph(data, min, max) {
     svg
       .append("circle")
       .attr("class", "tooltip-point")
-      .attr("r", 5)
+      .attr("r", 7)
       .attr("fill", "var(--spotify-green)")
       .attr("stroke", "black")
-      .attr("stroke-width", 5)
+      .attr("stroke-width", 7)
       .style("opacity", 0)
       .style('pointer-events', 'none')
 
@@ -670,13 +670,13 @@ function refreshOverallStreamsGraph(data, min, max) {
       tooltip.style.top = `${height - margin.top - margin.bottom - 25 - tooltip.clientHeight + y(dataset[i].streams)}px`;
       tooltip.innerHTML = `<span><strong>Date</strong>: ${approximateDate(new Date(dataset[i].date))}</span><br/><span><strong>Streams</strong>: ${dataset[i].streams}</span>`;
 
-      d3.select(".tooltip-point").style('opacity', 1)
+      d3.select("#overall-stream-count-history .tooltip-point").style('opacity', 1)
         .attr('cx', x(d3.timeParse("%Y-%m-%d")(approximateDate(new Date(dataset[i].date)))))
         .attr('cy', y(dataset[i].streams))
     }
 
     function pointerleft() {
-      document.querySelector(".tooltip-point").style.opacity = "0";
+      document.querySelector("#overall-stream-count-history .tooltip-point").style.opacity = "0";
       tooltip.style.opacity = "0";
       sleep(300).then(() => tooltip.style.display = "none");
     }
@@ -690,7 +690,20 @@ function refreshGenreAnalysisGraph(data) {
   })
   let attr = document.querySelector("#oneD-song-genre-factor").value;
   let numNodes = 200;
-  document.querySelector("#oneD-song-genre-force").innerHTML = '<g id="lines"></g><g id="visual"></g>';
+  document.querySelector("#oneD-song-genre-force").innerHTML = `
+    <g id="lines"></g>
+    <g id="tooltip"></g>
+    <g id="visual"></g>
+  `;
+
+  d3.select("#tooltip")
+    .append("circle")
+    .attr("class", "tooltip-point")
+    .attr("r", 10)
+    .attr("stroke", "var(--spotify-green)")
+    .attr("stroke-width", 5)
+    .style("opacity", 0)
+    .style('pointer-events', 'none')
 
   let margin = {top: 20, right: 20, bottom: 20, left: 20};
   let width = document.querySelector("#oneD-song-genre-force").clientWidth - margin.left - margin.right;
@@ -722,6 +735,7 @@ function refreshGenreAnalysisGraph(data) {
         .attr("id", `clip${d.index}`)
         .append("circle")
         .attr("r", d.radius)
+        .attr("fill-opacity", 0)
         .attr("cx", 0)
         .attr("cy", 0);
     })
@@ -739,7 +753,7 @@ function refreshGenreAnalysisGraph(data) {
     let xAxis = d3.axisBottom().scale(xScale).ticks(6);
 
     svg.select("#lines")
-      .attr("transform", "translate(0," + height + ")")
+      .attr("transform", `translate(${margin.left} ${margin.top + height})`)
       .attr("class", "x-axis")
 
     svg.selectAll(".x-axis")
@@ -768,7 +782,7 @@ function refreshGenreAnalysisGraph(data) {
     let yAxis = d3.axisLeft().scale(yScale).ticks(6);
 
     svg.select("#lines")
-      .attr("transform", `translate(${margin.left + 15} 0)`)
+      .attr("transform", `translate(${margin.left + 15} ${margin.top})`)
       .attr("class", "y-axis")
 
     svg.selectAll(".y-axis")
@@ -805,6 +819,56 @@ function refreshGenreAnalysisGraph(data) {
       d.y = Math.max(d.radius, Math.min(height - d.radius, d.y));
       return "translate(" + d.x + "," + d.y + ")";
     });
+
+    updateOutline();
+  }
+
+  // Add the event listeners that show or hide the tooltip.
+  const tooltip = document.querySelector("#oneD-song-genre-force-tooltip");
+
+  d3.select("#oneD-song-genre-force .tooltip-point")
+    .attr("transform", `translate(${margin.left} ${margin.top})`)
+
+  node
+    .on("mouseover mousemove", mousemove)
+    .on("mouseleave", mouseleave);
+
+  function mousemove(event, d) {
+    tooltip.style.display = "inline-block";
+    d3.select("#oneD-song-genre-force-tooltip").transition().duration(100).style("opacity", 1)
+    tooltip.style.position = "absolute";
+    tooltip.style.left = `${Math.max(d.x - tooltip.clientWidth / 2, 0)}px`
+    tooltip.style.top = `${margin.top + margin.bottom + 80 + tooltip.clientHeight / 2 + d.y}px`;
+    console.log(d.y)
+    tooltip.innerHTML = `
+      <span><strong>Song</strong>: ${data[d.index].trackName}</span><br/>
+      <span><strong>By</strong>: ${[...data[d.index].artists].toString().replaceAll(",", ", ")}</span><br/>
+      <span><strong>${attr}</strong>: ${data[d.index][attr]}</span>
+    `;
+    document.querySelector("#oneD-song-genre-force .tooltip-point").data = d;
+    document.querySelector("#oneD-song-genre-force .tooltip-point").style.opacity = "1";
+    document.querySelector("#oneD-song-genre-force").style.cursor = "pointer";
+    updateOutline();
+  }
+
+  function mouseleave() {
+    document.querySelector("#oneD-song-genre-force .tooltip-point").style.opacity = "0";
+
+    d3.select("#oneD-song-genre-force-tooltip").transition()
+      .duration(200).style("opacity", 0)
+      .on('end', () => tooltip.style.display = "none")
+
+    document.querySelector("#oneD-song-genre-force").style.cursor = "default";
+  }
+
+  function updateOutline() {
+    if (document.querySelector("#oneD-song-genre-force .tooltip-point").data !== undefined) {
+      let d = document.querySelector("#oneD-song-genre-force .tooltip-point").data;
+      d3.select("#oneD-song-genre-force .tooltip-point")
+        .attr('cx', d.x)
+        .attr('cy', d.y)
+        .attr('r', d.radius)
+    }
   }
 }
 
