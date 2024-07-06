@@ -709,34 +709,49 @@ svg {
   }
 }
 
-#overall-graphs {
-  #overall-graphs-preference-panel {
+#overall-graphs, #genre-analysis {
+  .preference-panel {
     padding: 10px 0;
     font-size: 12pt;
+  }
 
-    label {
-      font-weight: bold;
-      margin-right: 5px;
-    }
+  h2 {
+    margin-top: 20px;
+    margin-bottom: 15px;
+  }
 
-    select {
-      font-family: "DM Sans", sans-serif;
-      background: var(--background-color);
-      color: var(--foreground-color);
-      appearance: none;
-      padding: 5px 10px;
-      border: 1px solid var(--foreground-color);
-      border-radius: 2px;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-      transition: 300ms;
-      width: fit-content;
-      text-align: center;
-    }
+  label {
+    font-weight: bold;
+    margin-right: 5px;
+  }
 
-    select:hover {
-      background: var(--foreground-color);
-      color: var(--background-color);
-      cursor: pointer;
-    }
+  select {
+    font-family: "DM Sans", sans-serif;
+    background: var(--background-color);
+    color: var(--foreground-color);
+    appearance: none;
+    padding: 5px 10px;
+    border: 1px solid var(--foreground-color);
+    border-radius: 2px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    transition: 300ms;
+    width: fit-content;
+    text-align: center;
+  }
+
+  select:hover {
+    background: var(--foreground-color);
+    color: var(--background-color);
+    cursor: pointer;
+  }
+}
+
+#genre-analysis svg {
+  width: 100%;
+  @media only screen and (min-width: 700px) {
+    height: 70vh;
+  }
+  @media only screen and (max-width: 700px) {
+    height: calc(100vw + 50vh);
   }
 }

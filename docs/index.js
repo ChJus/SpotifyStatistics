@@ -377,6 +377,10 @@ document.querySelector("#overall-graphs-group-preference").addEventListener("cha
   document.querySelector("#settings .tab.active").click();
 })
 
+document.querySelector("#oneD-song-genre-factor").addEventListener("change", (e) => {
+  document.querySelector("#settings .tab.active").click();
+})
+
 // Update all information displays based on data and time range
 async function refreshDashboard(d, dateMin, dateMax) {
   // todo: see if can find way to efficiently find unique songs in range of time
@@ -455,6 +459,7 @@ async function refreshDashboard(d, dateMin, dateMax) {
 
 function refreshGraphs(data, min, max) {
   refreshOverallStreamsGraph(data, min, max);
+  refreshGenreAnalysisGraph(data);
 }
 
 function refreshOverallStreamsGraph(data, min, max) {
@@ -534,10 +539,10 @@ function refreshOverallStreamsGraph(data, min, max) {
 
   let svg;
   let x = d3.scaleTime().range([0, width]);
-  let xAxis = d3.axisBottom().scale(x).ticks(5);
+  let xAxis = d3.axisBottom().scale(x).ticks(4);
 
   let y = d3.scaleLinear().range([height, 0]);
-  let yAxis = d3.axisLeft().scale(y).ticks(5);
+  let yAxis = d3.axisLeft().scale(y).ticks(4);
 
   // If the graphs exist, just modify their time range
   if (document.querySelector("#overall-graphs svg") !== null) {
@@ -635,6 +640,131 @@ function refreshOverallStreamsGraph(data, min, max) {
       .attr("fill", "none")
       .attr("stroke", "var(--spotify-green)")
       .attr("stroke-width", 1.75)
+  }
+}
+
+function refreshGenreAnalysisGraph(data) {
+  data = [...data.songStats.values()];
+  data.sort(function (a, b) {
+    return b.streams - a.streams
+  })
+  let attr = document.querySelector("#oneD-song-genre-factor").value;
+  let numNodes = 200;
+  document.querySelector("#oneD-song-genre-force").innerHTML = '<g id="lines"></g><g id="visual"></g>';
+
+  let margin = {top: 20, right: 20, bottom: 20, left: 20};
+  let width = document.querySelector("#oneD-song-genre-force").clientWidth - margin.left - margin.right;
+  let height = document.querySelector("#oneD-song-genre-force").clientHeight - margin.top - margin.bottom;
+  let svg = d3.select("#oneD-song-genre-force");
+  let graphic = d3.select("#oneD-song-genre-force #visual");
+
+  let nodes = d3.range(numNodes).map(function (d, i) {
+    return {
+      radius: Math.sqrt(data[i].streams) + 7,
+      value: data[i][attr],
+      index: i,
+      image: data[i].image !== null ? data[i].image : ''
+    }
+  });
+
+  // Set domain based on factor range
+  let domain;
+  if (attr === "tempo") domain = [d3.min(nodes, (d) => d.value) - 20, d3.max(nodes, (d) => d.value) + 20];
+  else domain = [d3.min(nodes, (d) => d.value) - 0.1, d3.max(nodes, (d) => d.value) + 0.1];
+
+  let node = graphic.selectAll(".node")
+    .data(nodes)
+    .enter()
+    .append("g")
+    .attr("class", "node")
+    .each((d) => {
+      graphic.append("clipPath")
+        .attr("id", `clip${d.index}`)
+        .append("circle")
+        .attr("r", d.radius)
+        .attr("cx", 0)
+        .attr("cy", 0);
+    })
+
+  node.append("image")
+    .attr("xlink:href", (d) => d.image)
+    .attr("x", (d) => -d.radius)
+    .attr("y", (d) => -d.radius)
+    .attr("width", (d) => 2 * d.radius)
+    .attr("height", (d) => 2 * d.radius)
+    .attr("clip-path", (d) => `url(#clip${d.index})`);
+
+  if (width > height) {
+    let xScale = d3.scaleLinear().domain(domain).range([0, width]);
+    let xAxis = d3.axisBottom().scale(xScale).ticks(6);
+
+    svg.select("#lines")
+      .attr("transform", "translate(0," + height + ")")
+      .attr("class", "x-axis")
+
+    svg.selectAll(".x-axis")
+      .call(xAxis)
+      .call(g => g.selectAll(".vertical-line, .domain").remove())
+      .call(g => g.selectAll(".tick line").clone()
+        .attr("class", "vertical-line")
+        .attr("y2", -height)
+        .attr("stroke-opacity", 0.1));
+
+    d3.forceSimulation(nodes)
+      .force('charge', d3.forceManyBody().strength(5))
+      .force('x', d3.forceX().x(function (d) {
+        return xScale(d.value);
+      }))
+      .force('y', d3.forceY().y(function (d) {
+        return height / 2;
+      }))
+      .force('collision', d3.forceCollide().radius(function (d) {
+        return d.radius;
+      }))
+      .on('tick', ticked);
+  } else {
+    let yScale = d3.scaleLinear().domain(domain).range([0, height]);
+
+    let yAxis = d3.axisLeft().scale(yScale).ticks(6);
+
+    svg.select("#lines")
+      .attr("transform", `translate(${margin.left + 15} 0)`)
+      .attr("class", "y-axis")
+
+    svg.selectAll(".y-axis")
+      .call(yAxis)
+      .call(g => g.selectAll(".horizontal-line, .domain").remove())
+      .call(g => g.selectAll(".tick line").clone()
+        .attr("class", "horizontal-line")
+        .attr("x2", width)
+        .attr("stroke-opacity", 0.1));
+
+    d3.forceSimulation(nodes)
+      .force('charge', d3.forceManyBody().strength(5))
+      .force('y', d3.forceY().y(function (d) {
+        return yScale(d.value);
+      }))
+      .force('x', d3.forceX().x(function (d) {
+        return width / 2;
+      }))
+      .force('collision', d3.forceCollide().radius(function (d) {
+        return d.radius;
+      }))
+      .on('tick', ticked);
+  }
+
+  function ticked() {
+    svg.attr("width", width)
+      .attr("height", height)
+
+    graphic
+      .attr("transform", `translate(${margin.left} ${margin.top})`)
+
+    node.attr("transform", function (d) {
+      d.x = Math.max(d.radius, Math.min(width - d.radius, d.x));
+      d.y = Math.max(d.radius, Math.min(height - d.radius, d.y));
+      return "translate(" + d.x + "," + d.y + ")";
+    });
   }
 }
 

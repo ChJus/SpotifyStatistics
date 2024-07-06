@@ -60,14 +60,30 @@
   <div><span id="overall-avg-session">__</span> minutes / session</div>
 </div>
 <div id="overall-graphs">
-  <div id="overall-graphs-preference-panel">
+  <div class="preference-panel">
+    <h2>Streams over time</h2>
     <label for="overall-graphs-group-preference">Group by: </label>
     <select name="groupSetting" id="overall-graphs-group-preference">
       <option value="d">day</option>
-      <option value="w">week</option>
+      <option value="w" selected="selected">week</option>
       <option value="m">month</option>
     </select>
   </div>
+</div>
+<div id="genre-analysis">
+  <div class="preference-panel">
+    <h2>Song characteristics distribution</h2>
+    <label for="oneD-song-genre-factor">Distribute by: </label>
+    <select name="oneD-song-genre-factor" id="oneD-song-genre-factor">
+      <option value="acousticness">acousticness</option>
+      <option value="danceability">danceability</option>
+      <option value="speechiness">speechiness</option>
+      <option value="energy">energy</option>
+      <option value="valence">positivity</option>
+      <option value="tempo">bpm</option>
+    </select>
+  </div>
+  <svg id="oneD-song-genre-force"></svg>
 </div>
 
 <div id="favorites">
