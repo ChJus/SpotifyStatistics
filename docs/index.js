@@ -930,7 +930,7 @@ function refreshGenreAnalysisGraph(data) {
     return b.streams - a.streams
   })
   let attr = document.querySelector("#oneD-song-genre-factor").value;
-  let numNodes = 200;
+  let numNodes = Math.min(data.length, 300);
   document.querySelector("#oneD-song-genre-force").innerHTML = `
     <g id="lines"></g>
     <g id="tooltip"></g>
