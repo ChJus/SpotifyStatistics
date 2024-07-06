@@ -710,6 +710,21 @@ svg {
 }
 
 #overall-graphs, #genre-analysis {
+  position: relative;
+
+  #overall-graph-tooltip {
+    display: none;
+    opacity: 0;
+    background-color: var(--background-color);
+    padding: 10px 15px;
+    font-size: 10pt;
+    z-index: 100;
+    width: max-content;
+    border: 1px solid var(--foreground-color);
+    transition: 200ms;
+    pointer-events: none;
+  }
+
   .preference-panel {
     padding: 10px 0;
     font-size: 12pt;

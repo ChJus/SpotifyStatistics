@@ -554,10 +554,7 @@ function refreshOverallStreamsGraph(data, min, max) {
       .append("svg")
       .attr("width", width + margin.left + margin.right)
       .attr("height", height + margin.top + margin.bottom)
-      .attr("id", "overall-stream-count-history")
-      .append("g")
-      .attr("transform",
-        "translate(" + margin.left + "," + margin.top + ")");
+      .attr("id", "overall-stream-count-history");
 
     // x-axis
     svg.append("g")
@@ -567,6 +564,16 @@ function refreshOverallStreamsGraph(data, min, max) {
     // y-axis
     svg.append("g")
       .attr("class", "y-axis")
+
+    svg
+      .append("circle")
+      .attr("class", "tooltip-point")
+      .attr("r", 5)
+      .attr("fill", "var(--spotify-green)")
+      .attr("stroke", "black")
+      .attr("stroke-width", 5)
+      .style("opacity", 0)
+      .style('pointer-events', 'none')
 
     update(dataset)
   }
@@ -639,7 +646,40 @@ function refreshOverallStreamsGraph(data, min, max) {
       )
       .attr("fill", "none")
       .attr("stroke", "var(--spotify-green)")
-      .attr("stroke-width", 1.75)
+      .attr("stroke-width", 1.75);
+
+    // Add the event listeners that show or hide the tooltip.
+    const tooltip = document.querySelector("#overall-graph-tooltip");
+    const bisect = d3.bisector(d => d.date).center;
+
+    svg.on("pointerenter pointermove", pointermoved)
+      .on("pointerleave", pointerleft)
+      .on("touchstart", event => event.preventDefault());
+
+    d3.select("#overall-graph-tooltip")
+      .on("pointerenter pointermove", pointermoved)
+      .on("pointerleave", pointerleft)
+      .on("touchstart", event => event.preventDefault());
+
+    function pointermoved(event) {
+      const i = bisect(dataset, x.invert(d3.pointer(event)[0]));
+      tooltip.style.display = "inline-block";
+      tooltip.style.opacity = "1";
+      tooltip.style.position = "absolute";
+      tooltip.style.left = `${x(d3.timeParse("%Y-%m-%d")(approximateDate(new Date(dataset[i].date)))) - tooltip.clientWidth / 2}px`
+      tooltip.style.top = `${height - margin.top - margin.bottom - 25 - tooltip.clientHeight + y(dataset[i].streams)}px`;
+      tooltip.innerHTML = `<span><strong>Date</strong>: ${approximateDate(new Date(dataset[i].date))}</span><br/><span><strong>Streams</strong>: ${dataset[i].streams}</span>`;
+
+      d3.select(".tooltip-point").style('opacity', 1)
+        .attr('cx', x(d3.timeParse("%Y-%m-%d")(approximateDate(new Date(dataset[i].date)))))
+        .attr('cy', y(dataset[i].streams))
+    }
+
+    function pointerleft() {
+      document.querySelector(".tooltip-point").style.opacity = "0";
+      tooltip.style.opacity = "0";
+      sleep(300).then(() => tooltip.style.display = "none");
+    }
   }
 }
 
