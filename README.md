@@ -1,10 +1,8 @@
-# StatsforSpotify
+# Spotify Statistics
 
 Analyze your Spotify listening data from [Spotify](https://www.spotify.com/us/account/privacy/).
 
 ## Features
-
-❌ Listening trends by time of day / day of week (streaming time, type of songs)
 
 ❌ Colored calendar showing listening time by day
 
@@ -16,6 +14,11 @@ factors)
 ❌ Allow album categorization
 
 ## Usage
+
+| ![](Example/1.png) | ![](Example/2.png) |
+|--------------------|--------------------|
+| ![](Example/3.png) | ![](Example/4.png) |
+| ![](Example/5.png) |
 
 1. Download your **Extended Streaming History** data from [Spotify](https://www.spotify.com/us/account/privacy/) (note:
    this may take up to 30 days).
