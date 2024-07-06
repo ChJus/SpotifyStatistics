@@ -864,7 +864,7 @@ export function refreshPopupGraphs(type, data, id) {
   }
 
   // Graph margins
-  let margin = {top: 10, right: 30, bottom: 30, left: 50},
+  let margin = {top: 30, right: 30, bottom: 40, left: 50},
     width = document.querySelector(`#popup-${type}-graph`).clientWidth - margin.left - margin.right,
     height = 200 - margin.top - margin.bottom;
 
@@ -931,7 +931,7 @@ export function refreshPopupGraphs(type, data, id) {
         .attr("stroke-opacity", 0.1))
       .call(g => g.append("text")
         .attr("x", -margin.left)
-        .attr("y", 0)
+        .attr("y", -12)
         .attr("fill", "currentColor")
         .attr("text-anchor", "start")
         .attr("class", "label")
@@ -941,7 +941,7 @@ export function refreshPopupGraphs(type, data, id) {
       .call(g => g.selectAll(".label").remove())
       .call(g => g.append("text")
         .attr("x", width - margin.right)
-        .attr("y", margin.bottom)
+        .attr("y", margin.bottom - 5)
         .attr("fill", "currentColor")
         .attr("text-anchor", "start")
         .attr("class", "label")
