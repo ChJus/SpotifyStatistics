@@ -466,7 +466,8 @@ function refreshPopupGraphs(type, data, id) {
   if (document.querySelector(`#popup-${type}-graph svg`) !== null)
     document.querySelector(`#popup-${type}-graph svg`).remove();
 
-  document.querySelector(`#popup-${type}-group-preference`).addEventListener("change", () => refreshPopupGraphs(type, data, id))
+  document.querySelector(`#popup-${type}-group-preference`).onchange = () => refreshPopupGraphs(type, data, id)
+
 
   let d;
   if (type === 'artist') {
