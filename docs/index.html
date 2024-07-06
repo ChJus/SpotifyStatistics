@@ -165,6 +165,18 @@
       </div>
     </div>
     <div id="popup-artist-right">
+      <div id="popup-artist-graph">
+        <div class="preference-panel">
+          <h2>Streams over time</h2>
+          <label for="popup-artist-group-preference">Group by: </label>
+          <select name="groupSetting" id="popup-artist-group-preference">
+            <option value="d">day</option>
+            <option value="w" selected="selected">week</option>
+            <option value="m">month</option>
+          </select>
+        </div>
+        <div id="popup-artist-graph-tooltip"></div>
+      </div>
       <table id="popup-songs-table">
         <tr>
           <th>No.</th>
@@ -185,14 +197,8 @@
           </tr>
         </template>
       </table>
-      <div id="popup-artist-graph-wrapper">
-        <svg id="popup-artist-graph"></svg>
-      </div>
     </div>
   </div>
-  <!--
-  todo graph of all streams over time (always do all time, highlight range based on selection),
-  -->
 </div>
 <div id="popup-song-wrapper">
   <div id="popup-song">
@@ -215,6 +221,18 @@
       </div>
     </div>
     <div id="popup-song-right">
+      <div id="popup-song-graph">
+        <div class="preference-panel">
+          <h2>Streams over time</h2>
+          <label for="popup-song-group-preference">Group by: </label>
+          <select name="groupSetting" id="popup-song-group-preference">
+            <option value="d">day</option>
+            <option value="w" selected="selected">week</option>
+            <option value="m">month</option>
+          </select>
+        </div>
+        <div id="popup-song-graph-tooltip"></div>
+      </div>
       <div id="song-characteristics">
         <div class="song-characteristics-section">
           <div><span id="song-acousticness">__</span> acousticness</div>
@@ -231,14 +249,8 @@
           <div><span id="song-time-signature">__</span> time signature</div>
         </div>
       </div>
-      <div id="popup-song-graph-wrapper">
-        <svg id="popup-song-graph"></svg>
-      </div>
     </div>
   </div>
-  <!--
-  todo graph of all streams over time (always do all time, highlight range based on selection),
-  -->
 </div>
 </body>
 <script type="module" src="index.js"></script>

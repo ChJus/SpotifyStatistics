@@ -476,6 +476,7 @@ body {
     }
 
     #popup-artist-right {
+      overflow-y: auto;
       @media only screen and (min-width: 530px) {
         width: 65%;
         height: 100%;
@@ -484,7 +485,6 @@ body {
         min-width: 80%;
         max-width: fit-content;
         margin: auto;
-        overflow-y: auto;
         max-height: calc(70% - 70px);
       }
       display: block;
@@ -709,10 +709,10 @@ svg {
   }
 }
 
-#overall-graphs, #genre-analysis {
+#overall-graphs, #genre-analysis, #popup-artist-graph, #popup-song-graph {
   position: relative;
 
-  #overall-graph-tooltip, #oneD-song-genre-force-tooltip {
+  #overall-graph-tooltip, #oneD-song-genre-force-tooltip, #popup-artist-graph-tooltip, #popup-song-graph-tooltip {
     display: none;
     opacity: 0;
     background-color: var(--background-color);
@@ -728,7 +728,7 @@ svg {
     width: max-content;
   }
 
-  #oneD-song-genre-force-tooltip {
+  #oneD-song-genre-force-tooltip, #popup-artist-graph-tooltip, #popup-song-graph-tooltip {
     max-width: 300px;
   }
 
@@ -766,6 +766,10 @@ svg {
     color: var(--background-color);
     cursor: pointer;
   }
+}
+
+#popup-artist-graph, #popup-song-graph {
+  margin-bottom: 50px;
 }
 
 #genre-analysis svg {

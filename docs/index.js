@@ -462,6 +462,243 @@ function refreshGraphs(data, min, max) {
   refreshGenreAnalysisGraph(data);
 }
 
+function refreshPopupGraphs(type, data, id) {
+  if (document.querySelector(`#popup-${type}-graph svg`) !== null)
+    document.querySelector(`#popup-${type}-graph svg`).remove();
+
+  document.querySelector(`#popup-${type}-group-preference`).addEventListener("change", () => refreshPopupGraphs(type, data, id))
+
+  let d;
+  if (type === 'artist') {
+    d = structuredClone([...data.artistStats.get(id).streamHistory.values()]);
+  } else {
+    d = structuredClone([...data.songStats.get(id).streamHistory.values()]);
+  }
+
+  let min = d[0].date, max = d[d.length - 1].date;
+  let dates = [...new Set(d.map(d => approximateDate(new Date(d.date))))]
+  let eDay = new Date(min);
+  eDay.setDate(eDay.getDate() - 1);
+
+  let dataset = [{
+    date: new Date(approximateDate(new Date(eDay))),
+    streams: d[getLast(d, eDay) + 1].streams,
+    msPlayed: d[getLast(d, eDay) + 1].msPlayed
+  }];
+  for (let i = 0; i < Math.round((new Date(max) - new Date(min)) / 24.0 / 3600.0 / 1000.0) - 1; i++) {
+    let sd = new Date(min);
+    sd.setDate(sd.getDate() + i);
+    let ed = new Date(sd);
+    ed.setDate(ed.getDate() + 1);
+
+    if (dates.includes(approximateDate(sd))) {
+      dataset.push({
+        date: sd,
+        streams: d[getLast(d, ed)].streams,
+        msPlayed: d[getLast(d, ed)].msPlayed
+      });
+    } else {
+      dataset.push({
+        date: sd,
+        streams: dataset[dataset.length - 1].streams,
+        msPlayed: dataset[dataset.length - 1].msPlayed
+      });
+    }
+  }
+
+  // %j: by day, %U: by week, %m: by month
+  // Note %Y groups by year — this helps prevent unintended grouping of days in different years
+  let group;
+
+  switch (document.querySelector(`#popup-${type}-group-preference`).value) {
+    case "d":
+      group = d3.timeFormat("%j %Y");
+      break;
+    case "w":
+      group = d3.timeFormat("%U %Y");
+      break;
+    case "m":
+      group = d3.timeFormat("%m %Y");
+      break;
+  }
+
+  let nest = [...d3.group(dataset, d => group(new Date(d.date))).values()];
+  dataset = [{
+    date: new Date(nest[0][0].date),
+    streams: nest[0][nest[0].length - 1].streams - nest[0][0].streams,
+    msPlayed: nest[0][nest[0].length - 1].msPlayed - nest[0][0].msPlayed
+  }];
+  for (let i = 1; i < nest.length; i++) {
+    dataset.push({
+      date: new Date(approximateDate(new Date(nest[i][0].date))),
+      streams: nest[i][nest[i].length - 1].streams - nest[i - 1][nest[i - 1].length - 1].streams,
+      msPlayed: nest[i][nest[i].length - 1].msPlayed - nest[i - 1][nest[i - 1].length - 1].msPlayed,
+    });
+  }
+
+  function getLast(data, date) {
+    for (let i = 0; i < data.length; i++) {
+      if (new Date(date) - new Date(data[i].date) < 0) {
+        return i - 1;
+      }
+    }
+    return data.length - 1;
+  }
+
+  // Graph margins
+  let margin = {top: 10, right: 30, bottom: 30, left: 50},
+    width = document.querySelector(`#popup-${type}-graph`).clientWidth - margin.left - margin.right,
+    height = 200 - margin.top - margin.bottom;
+
+  let svg;
+  let x = d3.scaleTime().range([0, width]);
+  let xAxis = d3.axisBottom().scale(x).ticks(4);
+
+  let y = d3.scaleLinear().range([height, 0]);
+  let yAxis = d3.axisLeft().scale(y).ticks(4);
+
+  svg = d3.select(`#popup-${type}-graph`)
+    .append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+    .attr("viewBox", `${-margin.left} ${-margin.top} ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`)
+    .attr("id", `popup-${type}-graph-svg`);
+
+  // x-axis
+  svg.append("g")
+    .attr("transform", "translate(0," + height + ")")
+    .attr("class", "x-axis")
+
+  // y-axis
+  svg.append("g")
+    .attr("class", "y-axis")
+
+  svg
+    .append("circle")
+    .attr("class", "tooltip-point")
+    .attr("r", 4)
+    .attr("fill", "var(--spotify-green)")
+    .attr("stroke", "var(--secondary-background-color)")
+    .attr("stroke-width", 4)
+    .style("opacity", 0)
+    .style('pointer-events', 'none')
+
+  update(dataset)
+
+  // Update function for graph
+  function update(data) {
+    // x-axis
+    x.domain(d3.extent(data, function (d) {
+      return d3.timeParse("%Y-%m-%d")(approximateDate(new Date(d.date)))
+    }));
+
+    svg.selectAll(".x-axis").transition()
+      .duration(500)
+      .call(xAxis); // limit number of ticks to prevent cramping
+
+    // y-axis
+    y.domain([0, d3.max(data, function (d) {
+      return d.streams
+    })]);
+
+    svg.selectAll(".y-axis").transition()
+      .duration(500)
+      .call(yAxis);
+
+    svg.select(".y-axis")
+      .call(g => g.selectAll(".horizontal-line, .label, .domain").remove())
+      .call(g => g.selectAll(".tick line").clone()
+        .attr("class", "horizontal-line")
+        .attr("x2", width)
+        .attr("stroke-opacity", 0.1))
+      .call(g => g.append("text")
+        .attr("x", -margin.left)
+        .attr("y", 0)
+        .attr("fill", "currentColor")
+        .attr("text-anchor", "start")
+        .attr("class", "label")
+        .text("↑ Streams"))
+
+    svg.select(".x-axis")
+      .call(g => g.selectAll(".label").remove())
+      .call(g => g.append("text")
+        .attr("x", width - margin.right)
+        .attr("y", margin.bottom)
+        .attr("fill", "currentColor")
+        .attr("text-anchor", "start")
+        .attr("class", "label")
+        .text("→ Date"))
+
+    // Create an update selection: bind to the new data
+    let u = svg.selectAll(".lineTest")
+      .data([data], function (d) {
+        return d3.timeParse("%Y-%m-%d")(approximateDate(new Date(d.date)))
+      });
+
+    // Update the line
+    u
+      .enter()
+      .append("path")
+      .attr("class", "lineTest")
+      .merge(u)
+      .transition()
+      .duration(500)
+      .attr("d", d3.line()
+        .x(function (d) {
+          return x(d3.timeParse("%Y-%m-%d")(approximateDate(new Date(d.date))));
+        })
+        .y(function (d) {
+          return y(d.streams);
+        })
+      )
+      .attr("fill", "none")
+      .attr("stroke", "var(--spotify-green)")
+      .attr("stroke-width", 1.75);
+
+    // Add the event listeners that show or hide the tooltip.
+    const tooltip = document.querySelector(`#popup-${type}-graph-tooltip`);
+    const bisect = d3.bisector(d => d.date).center;
+
+    svg.on("pointerenter pointermove", pointermoved)
+      .on("pointerleave", pointerleft)
+      .on("touchstart", event => event.preventDefault());
+
+    d3.select("#popup-artist-graph-tooltip")
+      .on("pointerenter pointermove", pointermoved)
+      .on("pointerleave", pointerleft)
+      .on("touchstart", event => event.preventDefault());
+
+    function pointermoved(event) {
+      const i = bisect(dataset, x.invert(d3.pointer(event)[0]));
+
+      // Manipulation to keep tooltip within frame
+      let l = x(d3.timeParse("%Y-%m-%d")(approximateDate(new Date(dataset[i].date)))) - tooltip.clientWidth / 2 + margin.left;
+      let t = y(dataset[i].streams) + margin.top - tooltip.clientHeight - 25;
+      t += document.querySelector(`#popup-${type}-graph .preference-panel`).clientHeight;
+      l = l < 0 ? 0 : l;
+      l = l + tooltip.clientWidth > width ? l - tooltip.clientWidth / 2 : l;
+      t = t < 0 ? y(dataset[i].streams) + margin.top + tooltip.clientHeight - 25 : t;
+
+      tooltip.style.display = "inline-block";
+      tooltip.style.opacity = "1";
+      tooltip.style.position = "absolute";
+      tooltip.style.left = `${l}px`
+      tooltip.style.top = `${t}px`;
+      tooltip.innerHTML = `<span><strong>Date</strong>: ${approximateDate(new Date(dataset[i].date))}</span><br/><span><strong>Streams</strong>: ${dataset[i].streams}</span>`;
+
+      d3.select(`#popup-${type}-graph-svg .tooltip-point`).style('opacity', 1)
+        .attr('cx', x(d3.timeParse("%Y-%m-%d")(approximateDate(new Date(dataset[i].date)))))
+        .attr('cy', y(dataset[i].streams))
+    }
+
+    function pointerleft() {
+      document.querySelector(`#popup-${type}-graph-svg .tooltip-point`).style.opacity = "0";
+      tooltip.style.opacity = "0";
+      sleep(300).then(() => tooltip.style.display = "none");
+    }
+  }
+}
+
 function refreshOverallStreamsGraph(data, min, max) {
   let d = structuredClone([...data.history.values()]);
   let dates = [...new Set(d.map(d => approximateDate(new Date(d.date))))]
@@ -548,12 +785,15 @@ function refreshOverallStreamsGraph(data, min, max) {
   if (document.querySelector("#overall-graphs svg") !== null) {
     svg = d3.select("#overall-graphs svg")
       .attr("width", width + margin.left + margin.right)
+      .attr("height", height + margin.top + margin.bottom)
+      .attr("viewBox", `${-margin.left} ${-margin.top} ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`)
     update(dataset);
   } else {
     svg = d3.select("#overall-graphs")
       .append("svg")
       .attr("width", width + margin.left + margin.right)
       .attr("height", height + margin.top + margin.bottom)
+      .attr("viewBox", `${-margin.left} ${-margin.top} ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`)
       .attr("id", "overall-stream-count-history");
 
     // x-axis
@@ -666,8 +906,8 @@ function refreshOverallStreamsGraph(data, min, max) {
       tooltip.style.display = "inline-block";
       tooltip.style.opacity = "1";
       tooltip.style.position = "absolute";
-      tooltip.style.left = `${x(d3.timeParse("%Y-%m-%d")(approximateDate(new Date(dataset[i].date)))) - tooltip.clientWidth / 2}px`
-      tooltip.style.top = `${height - margin.top - margin.bottom - 25 - tooltip.clientHeight + y(dataset[i].streams)}px`;
+      tooltip.style.left = `${x(d3.timeParse("%Y-%m-%d")(approximateDate(new Date(dataset[i].date)))) - tooltip.clientWidth / 2 + margin.left}px`
+      tooltip.style.top = `${height - margin.top - margin.bottom - 25 - tooltip.clientHeight + y(dataset[i].streams) + margin.top}px`;
       tooltip.innerHTML = `<span><strong>Date</strong>: ${approximateDate(new Date(dataset[i].date))}</span><br/><span><strong>Streams</strong>: ${dataset[i].streams}</span>`;
 
       d3.select("#overall-stream-count-history .tooltip-point").style('opacity', 1)
@@ -684,6 +924,7 @@ function refreshOverallStreamsGraph(data, min, max) {
 }
 
 function refreshGenreAnalysisGraph(data) {
+  let originalData = structuredClone(data);
   data = [...data.songStats.values()];
   data.sort(function (a, b) {
     return b.streams - a.streams
@@ -831,7 +1072,8 @@ function refreshGenreAnalysisGraph(data) {
 
   node
     .on("mouseover mousemove", mousemove)
-    .on("mouseleave", mouseleave);
+    .on("mouseleave", mouseleave)
+    .on("click", (e, d) => moreInfo("song", originalData, data[d.index].internalID));
 
   function mousemove(event, d) {
     tooltip.style.display = "inline-block";
@@ -839,7 +1081,6 @@ function refreshGenreAnalysisGraph(data) {
     tooltip.style.position = "absolute";
     tooltip.style.left = `${Math.max(d.x - tooltip.clientWidth / 2, 0)}px`
     tooltip.style.top = `${margin.top + margin.bottom + 80 + tooltip.clientHeight / 2 + d.y}px`;
-    console.log(d.y)
     tooltip.innerHTML = `
       <span><strong>Song</strong>: ${data[d.index].trackName}</span><br/>
       <span><strong>By</strong>: ${[...data[d.index].artists].toString().replaceAll(",", ", ")}</span><br/>
@@ -1015,6 +1256,9 @@ function moreInfo(type, data, id) {
     document.querySelector("#song-danceability").parentNode.style.opacity = `${0.6 + song.danceability * 0.4}`;
     document.querySelector("#song-speechiness").parentNode.style.opacity = `${0.6 + song.speechiness * 0.4}`;
   }
+
+  // Update graphs in popup
+  refreshPopupGraphs(type, data, id);
 }
 
 // Helper functions
