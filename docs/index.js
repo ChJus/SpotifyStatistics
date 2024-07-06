@@ -13,12 +13,12 @@ const serialize = (value) => JSON.stringify(value, stringifyReplacer);
 const deserialize = async (text) => JSON.parse(text, parseReviver);
 
 // Initial visibility is hidden for download (waits until file is uploaded)
-document.querySelector("#download").addEventListener("click", download);
+document.querySelector("#download").onclick = download;
 document.querySelector("#download").style.display = "none";
 
 // Add event listeners to time frequency range buttons
 document.querySelectorAll("#settings button").forEach(button => {
-  button.addEventListener("click", async (e) => {
+  button.onclick = async (e) => {
     // Only highlight selected range (acts as toggle, similar to radio button group)
     document.querySelectorAll("#settings button").forEach(button => {
       button.classList.remove("active");
@@ -71,7 +71,7 @@ document.querySelectorAll("#settings button").forEach(button => {
         break;
     }
     await refreshDashboard(processedData, sd, ed);
-  })
+  }
 })
 
 // Obtain credentials for API calls
@@ -88,7 +88,7 @@ if (localStorage.hasOwnProperty("data")) {
 // Code for handling file selectors
 // First time users use this popup file selector to select the data file
 document.querySelector("#popup-file").accept = "application/json,text/plain";
-document.querySelector("#popup-file").addEventListener("change", async (e) => {
+document.querySelector("#popup-file").onchange = async (e) => {
   document.querySelector("#download").style.display = "none";
   // Get file and read text
   let file = e.target.files.item(0);
@@ -107,11 +107,11 @@ document.querySelector("#popup-file").addEventListener("change", async (e) => {
   await refreshDashboard(processedData, processedData.startDate, processedData.endDate);
   document.querySelector("#popup-container").style.display = "none";
   document.querySelector("#download").style.display = "inline-block";
-});
+};
 
 // Users use this selector to update data by uploading either data from Spotify or from this site
 document.querySelector("#file").accept = "application/json,text/plain";
-document.querySelector("#file").addEventListener("change", async (e) => {
+document.querySelector("#file").onchange = async (e) => {
   let file = e.target.files.item(0);
   let text = await file.text();
   if (file.type === "application/json") {
@@ -130,7 +130,7 @@ document.querySelector("#file").addEventListener("change", async (e) => {
 
   await refreshDashboard(processedData, processedData.startDate, processedData.endDate);
   document.querySelector("#download").style.display = "inline-block";
-});
+};
 
 // Parse data from Spotify
 async function readData(text) {
@@ -373,13 +373,8 @@ window.addEventListener('resize', async () => {
 }, true);
 
 // Update graphs on change of grouping preference
-document.querySelector("#overall-graphs-group-preference").addEventListener("change", (e) => {
-  document.querySelector("#settings .tab.active").click();
-})
-
-document.querySelector("#oneD-song-genre-factor").addEventListener("change", (e) => {
-  document.querySelector("#settings .tab.active").click();
-})
+document.querySelector("#overall-graphs-group-preference").onchange = () => document.querySelector("#settings .tab.active").click();
+document.querySelector("#oneD-song-genre-factor").onchange = () => document.querySelector("#settings .tab.active").click()
 
 // Update all information displays based on data and time range
 async function refreshDashboard(d, dateMin, dateMax) {
@@ -443,7 +438,7 @@ async function refreshDashboard(d, dateMin, dateMax) {
 
     // Add event listener to display popup on click, and append to DOM
     let item = document.importNode(templateArtists.querySelector("tr"), true);
-    item.addEventListener("click", () => moreInfo("artist", data, sortedArtists[i].name));
+    item.onclick = () => moreInfo("artist", data, sortedArtists[i].name);
     document.querySelector("#favorites-artists-table").appendChild(item);
 
     templateSongs.querySelectorAll("tr td")[0].innerText = `${(i + 1)}`;
@@ -452,7 +447,7 @@ async function refreshDashboard(d, dateMin, dateMax) {
     templateSongs.querySelector(".text-sub").innerText = `${commafy(Math.round(getStreamStats(sortedSongs[i], "msPlayed", min, max) / 1000.0 / 60.0))} minutes | ${commafy(getStreamStats(sortedSongs[i], "streams", min, max))} streams`;
 
     item = document.importNode(templateSongs.querySelector("tr"), true);
-    item.addEventListener("click", () => moreInfo("song", data, sortedSongs[i].internalID));
+    item.onclick = () => moreInfo("song", data, sortedSongs[i].internalID);
     document.querySelector("#favorites-songs-table").appendChild(item);
   }
 }
@@ -1131,28 +1126,28 @@ function getStreamStats(item, property, min, max) {
 let previouslyViewed = [];
 
 // Handle history feature call
-document.querySelector("#popup-artist-back-wrapper").addEventListener("click", () => {
+document.querySelector("#popup-artist-back-wrapper").onclick = () => {
   previouslyViewed.pop();
   let item = previouslyViewed.pop();
   moreInfo(item.type, item.data, item.id);
-})
+}
 
-document.querySelector("#popup-song-back-wrapper").addEventListener("click", () => {
+document.querySelector("#popup-song-back-wrapper").onclick = () => {
   previouslyViewed.pop();
   let item = previouslyViewed.pop();
   moreInfo(item.type, item.data, item.id);
-})
+}
 
 // Handle close popup
-document.querySelector("#popup-artist-close-wrapper").addEventListener("click", () => {
+document.querySelector("#popup-artist-close-wrapper").onclick = () => {
   document.querySelector("#popup-artist-wrapper").style.display = "none";
   document.querySelector("#popup-song-wrapper").style.display = "none";
-})
+}
 
-document.querySelector("#popup-song-close-wrapper").addEventListener("click", () => {
+document.querySelector("#popup-song-close-wrapper").onclick = () => {
   document.querySelector("#popup-artist-wrapper").style.display = "none";
   document.querySelector("#popup-song-wrapper").style.display = "none";
-})
+}
 
 // Display popup information
 function moreInfo(type, data, id) {
@@ -1196,7 +1191,7 @@ function moreInfo(type, data, id) {
       templateSongs.querySelector(".text-main").innerText = `${song.trackName}`;
       templateSongs.querySelector(".text-sub").innerText = `${commafy(Math.round(getStreamStats(song, "msPlayed", data.startDate, data.endDate) / 1000.0 / 60.0))} minutes | ${commafy(getStreamStats(song, "streams", data.startDate, data.endDate))} streams`;
       let item = document.importNode(templateSongs.querySelector("tr"), true);
-      item.addEventListener("click", () => moreInfo("song", data, song.internalID));
+      item.onclick = () => moreInfo("song", data, song.internalID);
       document.querySelector("#popup-songs-table").appendChild(item);
     }
   } else {
@@ -1209,9 +1204,9 @@ function moreInfo(type, data, id) {
     for (let i = 0; i < song.artists.size; i++) {
       let element = document.createElement("a");
       element.innerHTML = [...song.artists][i];
-      element.addEventListener("click", () => {
+      element.onclick = () => {
         moreInfo("artist", data, [...song.artists][i])
-      });
+      };
       document.querySelector("#popup-song-artists").appendChild(element);
       if (i !== song.artists.size - 1) {
         document.querySelector("#popup-song-artists").appendChild(span.cloneNode(true));
