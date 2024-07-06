@@ -23,7 +23,7 @@ factors)
 
 1. Download your **Extended Streaming History** data from [Spotify](https://www.spotify.com/us/account/privacy/) (note:
    this may take up to 30 days).
-2. Visit the [dashboard](https://chjus.github.io/StatsforSpotify/) and upload the `.zip` file.
+2. Visit the [dashboard](https://chjus.github.io/SpotifyStatistics/) and upload the `.zip` file.
 
 ### Privacy
 
