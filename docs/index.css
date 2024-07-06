@@ -35,7 +35,7 @@ body {
   justify-content: center;
   position: fixed;
   padding: 30px;
-  z-index: 1000;
+  z-index: 3000;
   width: 100vw;
   height: 100vh;
   opacity: 1;
@@ -712,10 +712,10 @@ svg {
   }
 }
 
-#overall-graphs, #genre-analysis, #popup-artist-graph, #popup-song-graph {
+#overall-graphs, #genre-analysis, #popup-artist-graph, #popup-song-graph, #timeOfDay-graph, #dayOfWeek-graph {
   position: relative;
 
-  #overall-graph-tooltip, #oneD-song-genre-force-tooltip, #popup-artist-graph-tooltip, #popup-song-graph-tooltip {
+  #overall-graph-tooltip, #oneD-song-genre-force-tooltip, #popup-artist-graph-tooltip, #popup-song-graph-tooltip, #timeOfDay-tooltip, #dayOfWeek-tooltip {
     display: none;
     opacity: 0;
     background-color: var(--background-color);
@@ -727,7 +727,7 @@ svg {
     pointer-events: none;
   }
 
-  #overall-graph-tooltip {
+  #overall-graph-tooltip, #timeOfDay-tooltip, #dayOfWeek-tooltip {
     width: max-content;
   }
 
@@ -783,5 +783,25 @@ svg {
   }
   @media only screen and (max-width: 700px) {
     height: calc(100vw + 50vh);
+  }
+}
+
+#timeAnalysisGroup {
+  display: flex;
+  @media only screen and (min-width: 900px) {
+    flex-direction: row;
+    #timeOfDay-graph, #dayOfWeek-graph {
+      width: 50%;
+
+      svg {
+        width: 100%;
+      }
+    }
+  }
+  @media only screen and (max-width: 900px) {
+    flex-direction: column;
+    #timeOfDay-graph, #dayOfWeek-graph {
+      width: 100%;
+    }
   }
 }

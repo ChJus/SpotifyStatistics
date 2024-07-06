@@ -140,7 +140,7 @@ async function readData(text) {
 
   // Set fundamental attribute (stream date-time)
   for (let i = 0; i < data.length; i++) {
-    data[i].endTime = new Date(data[i].endTime);
+    data[i].endTime = new Date(Date.parse(data[i].endTime.replace(" ", "T") + ":00.000Z"));
   }
 
   // Remove all streams that were less than 30s (clean data)
