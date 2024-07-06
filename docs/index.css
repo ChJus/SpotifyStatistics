@@ -22,7 +22,7 @@ body {
   font-family: "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   margin: auto;
   width: 90vw;
-  height: 100vh;
+  height: fit-content;
   padding: 3rem;
   position: relative;
   display: block;
@@ -208,10 +208,13 @@ body {
   flex-wrap: wrap;
   justify-content: space-evenly;
   width: fit-content;
-  height: fit-content;
   margin: 1rem auto;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
 
   button {
+    height: fit-content;
     display: inline-block;
     outline: none;
     border: 2px solid var(--foreground-color);
