@@ -652,6 +652,7 @@ body {
     }
 
     #popup-song-right {
+      overflow-y: auto;
       @media only screen and (min-width: 670px) {
         width: 65%;
         height: 100%;
@@ -660,7 +661,6 @@ body {
         min-width: 80%;
         max-width: fit-content;
         margin: auto;
-        overflow-y: auto;
         max-height: calc(70% - 70px);
       }
       display: block;
