@@ -243,9 +243,8 @@ body {
   }
 }
 
-#overall {
+#overall, #overview-stats {
   display: flex;
-  padding: 20px;
   justify-content: space-evenly;
   flex-wrap: wrap;
   width: 100%;
@@ -260,6 +259,15 @@ body {
       display: block;
     }
   }
+}
+
+#overall {
+  padding: 20px;
+}
+
+#overview {
+  margin-top: 5vh;
+  margin-bottom: 5vh;
 }
 
 #favorites {

@@ -402,6 +402,35 @@ async function refreshDashboard(d, dateMin, dateMax) {
   document.querySelector("#overall #overall-days").innerText = `${commafy(getLaterDate([...data.activeDays], max) - getEarlierDate([...data.activeDays], min))} / ${commafy(Math.min(data.accountAge, Math.round((max - min) / (1000.0 * 3600.0 * 24.0))))}`;
   document.querySelector("#overall #overall-avg-session").innerText = `${commafy(Math.ceil(parseFloat(document.querySelector("#overall #overall-minutes").innerText.replaceAll(",", "")) / (getLaterDate([...data.activeDays], max) - getEarlierDate([...data.activeDays], min))))}`;
 
+  // Display song overview characteristics
+  let songCount = data.songStats.size;
+  let attr = ["acousticness", "danceability", "speechiness", "energy", "valence"];
+  let counts = new Array(5).fill(0);
+  let bpmTotal = 0;
+  for (let i = 0 ; i < data.songStats.size; i++) {
+    let song = [...data.songStats.values()][i];
+    for (let j = 0 ; j < attr.length; j++) {
+      if (song[attr[j]] >= 0.5) {
+        counts[j]++;
+      }
+    }
+    bpmTotal += song.tempo;
+  }
+
+  document.querySelector("#overview-stats #overview-acousticness").innerText = `${(counts[0] / songCount * 100).toFixed(0)}%`;
+  document.querySelector("#overview-stats #overview-danceability").innerText = `${(counts[1] / songCount * 100).toFixed(0)}%`;
+  document.querySelector("#overview-stats #overview-speechiness").innerText = `${(counts[2] / songCount * 100).toFixed(0)}%`;
+  document.querySelector("#overview-stats #overview-energy").innerText = `${(counts[3] / songCount * 100).toFixed(0)}%`;
+  document.querySelector("#overview-stats #overview-valence").innerText = `${(counts[4] / songCount * 100).toFixed(0)}%`;
+  document.querySelector("#overview-stats #overview-tempo").innerText = `${(bpmTotal / songCount).toFixed(0)}`;
+
+  document.querySelector("#overview-stats #overview-acousticness").parentNode.style.opacity = `${0.6 + (counts[0] / songCount) * 0.4}`;
+  document.querySelector("#overview-stats #overview-danceability").parentNode.style.opacity = `${0.6 + (counts[1] / songCount) * 0.4}`;
+  document.querySelector("#overview-stats #overview-speechiness").parentNode.style.opacity = `${0.6 + (counts[2] / songCount) * 0.4}`;
+  document.querySelector("#overview-stats #overview-energy").parentNode.style.opacity = `${0.6 + (counts[3] / songCount) * 0.4}`;
+  document.querySelector("#overview-stats #overview-valence").parentNode.style.opacity = `${0.6 + (counts[4] / songCount) * 0.4}`;
+
+
   // Check on graphs (may update range and/or data)
   GRAPH.refreshGraphs(data, min, max);
 
