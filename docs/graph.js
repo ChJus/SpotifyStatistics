@@ -108,7 +108,7 @@ function refreshCalendarGraph(data) {
   }
 
     const width = document.querySelector("#calendar-graph").clientWidth; // width of the chart
-    const cellSize = 15; // height of a day
+    const cellSize = 15, cellMargin = 1;
     const height = cellSize * 9; // height of a week (7 days + padding)
 
     // Define formatting functions for the axes and tooltips.
@@ -163,7 +163,7 @@ function refreshCalendarGraph(data) {
     .attr("width", 0).attr("height", 0)
     .attr("x", 0).attr("y", 0)
     .attr("stroke", "var(--foreground-color)")
-    .attr("stroke-width", 1)
+    .attr("stroke-width", cellMargin * 2)
     .style("opacity", 0)
     .style('pointer-events', 'none')
     .attr("transform", (d, i) => `translate(40.5,${height * i + cellSize * 1.5})`);
@@ -196,10 +196,10 @@ function refreshCalendarGraph(data) {
     .selectAll()
     .data(dataset)
     .join("rect")
-    .attr("width", cellSize - 1)
-    .attr("height", cellSize - 1)
-    .attr("x", d => timeWeek.count(d3.utcYear(d.date), d.date) * cellSize + 0.5)
-    .attr("y", d => countDay(d.date.getUTCDay()) * cellSize + 0.5)
+    .attr("width", cellSize - cellMargin * 2)
+    .attr("height", cellSize - cellMargin * 2)
+    .attr("x", d => timeWeek.count(d3.utcYear(d.date), d.date) * cellSize + cellMargin)
+    .attr("y", d => countDay(d.date.getUTCDay()) * cellSize + cellMargin)
     .attr("fill", d => color(d.value))
     .on("mouseover mousemove", mousemove)
     .on("mouseleave", mouseleave);
@@ -275,7 +275,6 @@ function refreshCalendarGraph(data) {
   function updateOutline() {
     if (document.querySelector("#calendar-graph svg .tooltip-point").data !== undefined) {
       let d = document.querySelector("#calendar-graph svg .tooltip-point").data;
-      console.log(d)
       d3.select("#calendar-graph svg .tooltip-point")
         .attr('x', d.x)
         .attr('y', d.y)
