@@ -15,6 +15,7 @@ Enhancements
 ❌ Increase requests per second to API? (Apply for extension as app)
 ❌ Convert song characteristics to graph/scale form? (e.g., valence)
 ❌ Reduce code redundancy and improve code modularity, maintainability
+❌ Add artists as linked sub-text to song listings
 
 Bug fixes
 ❌ Check to see if updating data by uploading another file changes ALL information displays
