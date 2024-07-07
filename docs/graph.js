@@ -134,7 +134,7 @@ function refreshCalendarGraph(data) {
         color = d3.scaleSequential(d3.interpolateRgbBasis(["#60558a", "#b5576c", "#f6a161", "#ffdd85", "#F7EBAB"])).domain(d3.extent(dataset, d => d.value));
         break;
       case "valence":
-        color = d3.scaleSequential(d3.interpolateRgbBasis(["#60558a", "#ac538d", "#e1915b", "#ffe23f", "#F7EBAB"])).domain(d3.extent(dataset, d => d.value));
+        color = d3.scaleSequential(d3.interpolateRgbBasis(["#495d7a", "#48a59a", "#f1b064", "#ffe23f", "#F7EBAB"])).domain(d3.extent(dataset, d => d.value));
         break;
     }
 
@@ -163,7 +163,7 @@ function refreshCalendarGraph(data) {
     .attr("width", 0).attr("height", 0)
     .attr("x", 0).attr("y", 0)
     .attr("stroke", "var(--foreground-color)")
-    .attr("stroke-width", cellMargin * 2)
+    .attr("stroke-width", cellMargin * 4)
     .style("opacity", 0)
     .style('pointer-events', 'none')
     .attr("transform", (d, i) => `translate(40.5,${height * i + cellSize * 1.5})`);
@@ -258,7 +258,6 @@ function refreshCalendarGraph(data) {
       x: event.target.getAttribute("x"), y: event.target.getAttribute("y")
     };
     document.querySelector("#calendar-graph svg .tooltip-point").style.opacity = "1";
-    document.querySelector("#calendar-graph svg").style.cursor = "pointer";
     updateOutline();
   }
 
@@ -268,8 +267,6 @@ function refreshCalendarGraph(data) {
     d3.select("#calendar-tooltip").transition()
       .duration(200).style("opacity", 0)
       .on('end', () => tooltip.style.display = "none")
-
-    document.querySelector("#calendar-graph svg").style.cursor = "default";
   }
 
   function updateOutline() {
