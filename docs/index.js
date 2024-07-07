@@ -3,7 +3,7 @@ import * as GRAPH from "./graph.js";
 // Global variables and constants
 let EXCEEDED_REQUEST_LIMIT = false;
 let QUERY_RATE_PER_SECOND = 10.0;
-let processedData, data;
+export let processedData, data;
 
 // API
 let i1 = "NmQyMDhlNGY3NzZiNGMxNmI0ODk2M2NkMTEwZWQwODQ=", i2 = "YWIyMTQ3MGIzN2VkNGFlYmI2NjY4Y2NlMjRmZDQyMDM="
@@ -29,7 +29,6 @@ document.querySelectorAll("#settings button").forEach(button => {
 
     // Get range option by part of button's id (of the form "tab-__")
     let option = e.target.id.split("-")[1];
-    let sd, ed; // start date, end date
 
     // Replace text depending on selected time range
     if (option !== "all") {
@@ -42,39 +41,46 @@ document.querySelectorAll("#settings button").forEach(button => {
       document.querySelector("#overall-artists").parentNode.innerHTML = document.querySelector("#overall-artists").parentNode.innerHTML.replace(" new artists", " artists");
     }
 
-    // Update dashboard based on date range
-    switch (option) {
-      case "all":
-        sd = processedData.startDate;
-        ed = processedData.endDate;
-        break;
-      case "1y":
-        sd = new Date(processedData.endDate);
-        sd.setDate(sd.getDate() - 365); // one year := 365 days here
-        ed = processedData.endDate;
-        break;
-      case "6m":
-        sd = new Date(processedData.endDate);
-        sd.setDate(sd.getDate() - 180); // 6 months
-        ed = processedData.endDate;
-        break;
-      case "3m":
-        sd = new Date(processedData.endDate);
-        sd.setDate(sd.getDate() - 90); // 3 months
-        ed = processedData.endDate;
-        break;
-      case "ytd": // 'Year to date' (from Jan 1st of year of last streaming entry)
-        sd = new Date(`${new Date(processedData.endDate).getFullYear()}-1-1`);
-        ed = processedData.endDate;
-        break;
-      case "mtd": // 'Month to date' (from start of month of last streaming entry)
-        sd = new Date(`${new Date(processedData.endDate).getFullYear()}-${new Date(processedData.endDate).getMonth() + 1}-1`);
-        ed = processedData.endDate;
-        break;
-    }
+    let [sd, ed] = getDateRange(); // start date, end date
     await refreshDashboard(processedData, sd, ed);
   }
 })
+
+export function getDateRange () {
+  let option = document.querySelector("#settings .tab.active").id.split("-")[1];
+  let sd, ed;
+  // Update dashboard based on date range
+  switch (option) {
+    case "all":
+      sd = processedData.startDate;
+      ed = processedData.endDate;
+      break;
+    case "1y":
+      sd = new Date(processedData.endDate);
+      sd.setDate(sd.getDate() - 365); // one year := 365 days here
+      ed = processedData.endDate;
+      break;
+    case "6m":
+      sd = new Date(processedData.endDate);
+      sd.setDate(sd.getDate() - 180); // 6 months
+      ed = processedData.endDate;
+      break;
+    case "3m":
+      sd = new Date(processedData.endDate);
+      sd.setDate(sd.getDate() - 90); // 3 months
+      ed = processedData.endDate;
+      break;
+    case "ytd": // 'Year to date' (from Jan 1st of year of last streaming entry)
+      sd = new Date(`${new Date(processedData.endDate).getFullYear()}-1-1`);
+      ed = processedData.endDate;
+      break;
+    case "mtd": // 'Month to date' (from start of month of last streaming entry)
+      sd = new Date(`${new Date(processedData.endDate).getFullYear()}-${new Date(processedData.endDate).getMonth() + 1}-1`);
+      ed = processedData.endDate;
+      break;
+  }
+  return [sd, ed];
+}
 
 // Obtain credentials for API calls
 await login();
@@ -125,10 +131,11 @@ document.querySelector("#file").onchange = async (e) => {
     localStorage.setItem("data", text);
   }
 
+  // todo: is this line needed?
   // remove overall graphs so when refreshDashboard is called, graphs are replaced with new data
   // the removal is important as the graph function will check if there are existing svg elements
   // (if there are, only the date range of the functions will change; *data* won't change)
-  document.querySelector("#overall-graphs svg").remove();
+  // document.querySelector("#overall-graphs svg").remove();
 
   await refreshDashboard(processedData, processedData.startDate, processedData.endDate);
   document.querySelector("#download").style.display = "inline-block";

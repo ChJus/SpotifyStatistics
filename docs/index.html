@@ -59,6 +59,27 @@
   <div><span id="overall-days">__ / __</span> days</div>
   <div><span id="overall-avg-session">__</span> minutes / session</div>
 </div>
+
+<div id="calendar-graph">
+  <div class="preference-panel">
+    <h2>Calendar</h2>
+  </div>
+
+  <label for="calendar-factor">Color by: </label>
+  <select name="calendar-factor" id="calendar-factor">
+    <option value="msPlayed">stream time</option>
+    <option value="streams">stream count</option>
+    <option value="energy">energy</option>
+    <option value="valence">positivity</option>
+  </select>
+
+  <label for="calendar-year">Year: </label>
+  <select name="calendar-year" id="calendar-year">
+  </select>
+
+  <div id="calendar-tooltip"></div>
+</div>
+
 <div id="overall-graphs">
   <div class="preference-panel">
     <h2>Streams over time</h2>

@@ -712,10 +712,10 @@ svg {
   }
 }
 
-#overall-graphs, #genre-analysis, #popup-artist-graph, #popup-song-graph, #timeOfDay-graph, #dayOfWeek-graph {
+#overall-graphs, #genre-analysis, #popup-artist-graph, #popup-song-graph, #timeOfDay-graph, #dayOfWeek-graph, #calendar-graph {
   position: relative;
 
-  #overall-graph-tooltip, #oneD-song-genre-force-tooltip, #popup-artist-graph-tooltip, #popup-song-graph-tooltip, #timeOfDay-tooltip, #dayOfWeek-tooltip {
+  #overall-graph-tooltip, #oneD-song-genre-force-tooltip, #popup-artist-graph-tooltip, #popup-song-graph-tooltip, #timeOfDay-tooltip, #dayOfWeek-tooltip, #calendar-tooltip {
     display: none;
     opacity: 0;
     background-color: var(--background-color);
@@ -804,4 +804,12 @@ svg {
       width: 100%;
     }
   }
+}
+
+div label:not(:first-of-type) {
+  margin-left: 2vw;
+}
+
+div label:nth-child(1) {
+  margin-left: 0;
 }
