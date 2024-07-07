@@ -775,6 +775,10 @@ svg {
   margin-bottom: 50px;
 }
 
+#genre-analysis, #timeAnalysisGroup {
+  margin-bottom: 20px;
+}
+
 #genre-analysis svg {
   /* Make force graph vertical if width is too small */
   width: 100%;
