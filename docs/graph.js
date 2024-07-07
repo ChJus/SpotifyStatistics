@@ -1,7 +1,6 @@
 import * as INDEX from "./index.js"
 
 // Resize graphs with timeout to avoid lagging and abundantly refreshing interface
-/*
 let windowResizeTimeout = null;
 window.addEventListener('resize', async () => {
   if (windowResizeTimeout) clearTimeout(windowResizeTimeout);
@@ -10,7 +9,6 @@ window.addEventListener('resize', async () => {
     document.querySelector("#settings .tab.active").click();
   }, 50);
 }, true);
- */
 
 // Update graphs on change of grouping preference
 document.querySelector("#overall-graphs-group-preference").onchange = () => {
