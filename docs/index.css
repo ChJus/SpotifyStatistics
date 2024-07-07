@@ -731,7 +731,7 @@ svg {
     width: max-content;
   }
 
-  #oneD-song-genre-force-tooltip, #popup-artist-graph-tooltip, #popup-song-graph-tooltip {
+  #oneD-song-genre-force-tooltip, #popup-artist-graph-tooltip, #popup-song-graph-tooltip, #calendar-tooltip {
     max-width: 300px;
   }
 

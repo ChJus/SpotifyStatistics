@@ -157,6 +157,17 @@ function refreshCalendarGraph(data) {
     .attr("viewBox", [0, 0, width, height * years.length])
     .attr("style", "max-width: 100%; height: auto; font: 10px 'DM Sans', sans-serif;");
 
+  svg
+    .append("rect")
+    .attr("class", "tooltip-point")
+    .attr("width", 0).attr("height", 0)
+    .attr("x", 0).attr("y", 0)
+    .attr("stroke", "var(--foreground-color)")
+    .attr("stroke-width", 1)
+    .style("opacity", 0)
+    .style('pointer-events', 'none')
+    .attr("transform", (d, i) => `translate(40.5,${height * i + cellSize * 1.5})`);
+
   const year = svg.selectAll("g")
     .data(years)
     .join("g")
@@ -190,8 +201,8 @@ function refreshCalendarGraph(data) {
     .attr("x", d => timeWeek.count(d3.utcYear(d.date), d.date) * cellSize + 0.5)
     .attr("y", d => countDay(d.date.getUTCDay()) * cellSize + 0.5)
     .attr("fill", d => color(d.value))
-    .append("title")
-    .text(d => `${d.date}: ${d.value}`);
+    .on("mouseover mousemove", mousemove)
+    .on("mouseleave", mouseleave);
 
   const month = year.append("g")
     .selectAll()
@@ -210,7 +221,69 @@ function refreshCalendarGraph(data) {
     .attr("fill", "var(--foreground-color)")
     .text(formatMonth);
 
-  Object.assign(svg.node(), {scales: {color}});
+  // Add the event listeners that show or hide the tooltip.
+  const tooltip = document.querySelector("#calendar-tooltip");
+
+  function mousemove(event, d) {
+    tooltip.style.display = "inline-block";
+    d3.select("#calendar-tooltip").transition().duration(100).style("opacity", 1)
+    tooltip.style.position = "absolute";
+    tooltip.style.left = `${40.5 + Math.max(parseFloat(event.target.getAttribute("x")) - tooltip.clientWidth / 2, 0)}px`
+    tooltip.style.top = `${-10 + height - tooltip.clientHeight + parseFloat(event.target.getAttribute("y"))}px`;
+
+    switch (factor) {
+      case "msPlayed":
+        tooltip.innerHTML = `
+          <span><strong>${approximateDate(d.date)}</strong>: ${d.value + " minutes"}</span>
+        `;
+        break;
+      case "streams":
+        tooltip.innerHTML = `
+          <span><strong>${approximateDate(d.date)}</strong>: ${d.value + " streams"}</span>
+        `;
+        break;
+      case "energy":
+        tooltip.innerHTML = `
+          <span><strong>${approximateDate(d.date)}</strong> (energy): ${d.value.toFixed(2)}</span>
+        `;
+        break;
+      case "valence":
+        tooltip.innerHTML = `
+          <span><strong>${approximateDate(d.date)}</strong> (positivity): ${d.value.toFixed(2)}</span>
+        `;
+        break;
+    }
+    document.querySelector("#calendar-graph svg .tooltip-point").data = {
+      width: event.target.getAttribute("width"), height: event.target.getAttribute("height"),
+      x: event.target.getAttribute("x"), y: event.target.getAttribute("y")
+    };
+    document.querySelector("#calendar-graph svg .tooltip-point").style.opacity = "1";
+    document.querySelector("#calendar-graph svg").style.cursor = "pointer";
+    updateOutline();
+  }
+
+  function mouseleave() {
+    document.querySelector("#calendar-graph svg .tooltip-point").style.opacity = "0";
+
+    d3.select("#calendar-tooltip").transition()
+      .duration(200).style("opacity", 0)
+      .on('end', () => tooltip.style.display = "none")
+
+    document.querySelector("#calendar-graph svg").style.cursor = "default";
+  }
+
+  function updateOutline() {
+    if (document.querySelector("#calendar-graph svg .tooltip-point").data !== undefined) {
+      let d = document.querySelector("#calendar-graph svg .tooltip-point").data;
+      console.log(d)
+      d3.select("#calendar-graph svg .tooltip-point")
+        .attr('x', d.x)
+        .attr('y', d.y)
+        .attr('width', d.width)
+        .attr('height', d.height)
+    }
+  }
+
   if (document.querySelector("#calendar-graph svg") !== null) {
   document.querySelector("#calendar-graph svg").remove();
   }
