@@ -377,7 +377,6 @@ async function refreshDashboard(d, dateMin, dateMax) {
   // todo: see if can find way to efficiently find unique songs in range of time
   // todo: serialize with short field names, consider converting all ms to minutes
   // todo: handle case where storage overflows 5MB.
-  // todo: tabs to switch between feature (top artists/songs, graphs)
   let data = structuredClone(d); // avoid modifying computed data
 
   // Get simplified date (date at midnight, equivalently the simple date 'yyyy-mm-dd')

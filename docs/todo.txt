@@ -1,0 +1,20 @@
+Features
+❌ Two-factor force-directed graph with customizable axes (selectable factors: streams, valence, acousticness, etc.).
+❌ 'Hot' list – table of songs/artists by peak streams in a day/week/month (allow selection)
+❌ Quiz (5-second snippets and make user guess song name)
+❌ Allow album categorization and add genre metadata to songs and artists
+❌ Graph of song valence/energy (selectable) by time of day
+❌ Have popup for calendar and overall graphs (e.g., display songs contributing to data point)
+
+Enhancements
+❌ Rework 'new songs' as unique songs streamed in period instead of new songs discovered during period
+❌ Optimize serialization storage consumption
+❌ Error handling: overflow of localStorage, invalid JSON/txt
+❌ Allow sort option by stream count or by stream time
+❌ Transition to accept .zip instead of single json file
+❌ Increase requests per second to API? (Apply for extension as app)
+❌ Convert song characteristics to graph/scale form? (e.g., valence)
+❌ Reduce code redundancy and improve code modularity, maintainability
+
+Bug fixes
+❌ Check to see if updating data by uploading another file changes ALL information displays

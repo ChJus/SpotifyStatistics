@@ -2,12 +2,6 @@
 
 Analyze your Spotify listening data from [Spotify](https://www.spotify.com/us/account/privacy/).
 
-## To-do
-
-❌ Quiz (5-second snippets and make user guess song name)
-
-❌ Allow album categorization
-
 ## Usage
 1. Download your **Extended Streaming History** data from [Spotify](https://www.spotify.com/us/account/privacy/) (note:
    this may take up to 30 days).
