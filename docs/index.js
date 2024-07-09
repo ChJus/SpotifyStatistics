@@ -2,7 +2,7 @@ import * as GRAPH from "./graph.js";
 
 // Global variables and constants
 let EXCEEDED_REQUEST_LIMIT = false;
-let QUERY_RATE_PER_SECOND = 10.0;
+let QUERY_RATE_PER_SECOND = 6.0;
 export let processedData, data;
 
 // API
@@ -46,7 +46,7 @@ document.querySelectorAll("#settings button").forEach(button => {
   }
 })
 
-export function getDateRange () {
+export function getDateRange() {
   let option = document.querySelector("#settings .tab.active").id.split("-")[1];
   let sd, ed;
   // Update dashboard based on date range
@@ -95,7 +95,7 @@ if (localStorage.hasOwnProperty("data")) {
 
 // Code for handling file selectors
 // First time users use this popup file selector to select the data file
-document.querySelector("#popup-file").accept = "application/json,text/plain";
+document.querySelector("#popup-file").accept = "application/json,text/plain,application/zip";
 document.querySelector("#popup-file").onchange = async (e) => {
   document.querySelector("#download").style.display = "none";
   // Get file and read text
@@ -103,11 +103,18 @@ document.querySelector("#popup-file").onchange = async (e) => {
   let text = await file.text();
 
   // todo: error handling
-  // Handle .json (todo: turn into .zip) of data from Spotify
   if (file.type === "application/json") {
     await readData(text);
     processedData = await summaryStatistics(data);
     localStorage.setItem("data", serialize(processedData));
+  } else if (file.type === "application/zip") {
+    let zip = await JSZip.loadAsync(file);
+    let filename = [...Object.values(zip.files)].filter(d => d.name.includes(".json"))[0].name;
+    await zip.file(filename).async("text").then(async text => {
+      await readData(text);
+      processedData = await summaryStatistics(data);
+      localStorage.setItem("data", serialize(processedData));
+    })
   } else { // todo: error handle, alternatively, upload a .txt file with data downloaded from this site using the download functionality
     processedData = await deserialize(text);
     localStorage.setItem("data", text);
@@ -118,43 +125,76 @@ document.querySelector("#popup-file").onchange = async (e) => {
 };
 
 // Users use this selector to update data by uploading either data from Spotify or from this site
-document.querySelector("#file").accept = "application/json,text/plain";
+document.querySelector("#file").accept = "application/json,text/plain,application/zip";
 document.querySelector("#file").onchange = async (e) => {
-  let file = e.target.files.item(0);
-  let text = await file.text();
-  if (file.type === "application/json") {
-    await readData(text);
-    processedData = await summaryStatistics(data);
-    localStorage.setItem("data", serialize(processedData));
-  } else {
-    processedData = await deserialize(text);
-    localStorage.setItem("data", text);
+  async function f(e) {
+    let file = e.target.files.item(0);
+    let text = await file.text();
+    if (file.type === "application/json") {
+      await readData(text);
+      processedData = await summaryStatistics(data);
+      localStorage.setItem("data", serialize(processedData));
+    } else if (file.type === "application/zip") {
+      let zip = await JSZip.loadAsync(file);
+      let filename = [...Object.values(zip.files)].filter(d => d.name.includes(".json"))[0].name;
+      zip.file(filename).async("text").then(async text => {
+        await readData(text);
+        processedData = await summaryStatistics(data);
+        localStorage.setItem("data", serialize(processedData));
+      })
+    } else {
+      processedData = await deserialize(text);
+      localStorage.setItem("data", text);
+    }
+
+    // todo: is this line needed?
+    // remove overall graphs so when refreshDashboard is called, graphs are replaced with new data
+    // the removal is important as the graph function will check if there are existing svg elements
+    // (if there are, only the date range of the functions will change; *data* won't change)
+    // document.querySelector("#overall-graphs svg").remove();
   }
-
-  // todo: is this line needed?
-  // remove overall graphs so when refreshDashboard is called, graphs are replaced with new data
-  // the removal is important as the graph function will check if there are existing svg elements
-  // (if there are, only the date range of the functions will change; *data* won't change)
-  // document.querySelector("#overall-graphs svg").remove();
-
-  await refreshDashboard(processedData, processedData.startDate, processedData.endDate);
-  document.querySelector("#download").style.display = "inline-block";
+  await f(e);
+  Promise.all([f(e)]).then(() => location.reload);
 };
 
+let USERNAME;
 // Parse data from Spotify
 async function readData(text) {
   data = await JSON.parse(text);
+  USERNAME = data[0].username;
+
+  data = data.filter(d => (d["spotify_track_uri"] !== null) && d["ms_played"] >= 30000);
 
   // Set fundamental attribute (stream date-time)
   for (let i = 0; i < data.length; i++) {
-    data[i].endTime = new Date(Date.parse(data[i].endTime.replace(" ", "T") + ":00.000Z"));
-  }
+    data[i].endTime = new Date(Date.parse(data[i].ts));
+    data[i].msPlayed = data[i]["ms_played"];
+    data[i].spotifyID = data[i]["spotify_track_uri"].replace("spotify:track:","");
+    data[i].trackName = data[i]["master_metadata_track_name"];
+    data[i].artistName = data[i]["master_metadata_album_artist_name"];
 
-  // Remove all streams that were less than 30s (clean data)
-  for (let i = data.length - 1; i >= 0; i--) {
-    if (data[i].msPlayed < 30000) {
-      data.splice(i, 1);
-    }
+    delete data[i]["conn_country"];
+    delete data[i]["episode_name"];
+    delete data[i]["episode_show_name"];
+    delete data[i]["incognito_mode"];
+    delete data[i]["ip_addr_decrypted"];
+    delete data[i]["conn_country"];
+    delete data[i]["master_metadata_album_album_name"];
+    delete data[i]["master_metadata_album_artist_name"];
+    delete data[i]["ms_played"];
+    delete data[i]["offline"];
+    delete data[i]["offline_timestamp"];
+    delete data[i]["platform"];
+    delete data[i]["reason_end"];
+    delete data[i]["reason_start"];
+    delete data[i]["shuffle"];
+    delete data[i]["skipped"];
+    delete data[i]["spotify_episode_uri"];
+    delete data[i]["ts"];
+    delete data[i]["username"];
+    delete data[i]["user_agent_decrypted"];
+    delete data[i]["spotify_track_uri"];
+    delete data[i]["master_metadata_track_name"];
   }
 }
 
@@ -162,7 +202,7 @@ async function readData(text) {
 * Obtain summary statistics from data file and Spotify API.
 * NOTE: this process is done in *five* steps:
 * 1. Go through data file and create initial list of unique songs.
-*    Initialize each entry with attributes msPlayed, streamHistory.
+*    Initialize each entry with attributes msPlayed, streamHistory, spotifyId, etc.
 *    Place this song entry into the songStats Map (where key is a string hash based on
 *    a string concatenation of the track's name and artists).
 *    Also, modify the uniqueSongs map, which represents a cumulative count of unique
@@ -199,7 +239,7 @@ async function summaryStatistics(data) {
   };
 
   data.forEach((e) => {
-    if (!result.songStats.has(stringHash(e.trackName + e.artistName))) {
+    if (!result.songStats.has(e.spotifyID)) {
       let song = structuredClone(e);
 
       if ([...result.uniqueSongs.values()][result.uniqueSongs.size - 1].date === approximateDate(song.endTime)) {
@@ -214,108 +254,115 @@ async function summaryStatistics(data) {
       song.msPlayed = 0;
       song.streams = 0;
       song.streamHistory = [{date: prevD, msPlayed: 0, streams: 0}];
-      song.internalID = stringHash(e.trackName + e.artistName);
-      result.songStats.set(stringHash(e.trackName + e.artistName), song);
+      result.songStats.set(e.spotifyID, song);
     }
   });
 
   let counter = 0;
   document.querySelector("#progress").max = result.songStats.size;
   document.querySelector("#popup-progress").max = result.songStats.size;
-  for (let [i, s] of result.songStats) {
-    if (EXCEEDED_REQUEST_LIMIT) { // Stop immediately if we hit 429 exceeded request limit.
+
+  let sid = Array.from(result.songStats.keys());
+  let slist = Array.from(result.songStats.values());
+  for (let i = 0; i < slist.length; i += 50) {
+    if (EXCEEDED_REQUEST_LIMIT) {
       break;
     }
-    httpGetAsync("https://api.spotify.com/v1/search?q=" + encodeURIComponent("artist:" + s.artistName + " track:" + s.trackName) + "&type=track&limit=1", (t) => {
-      if (JSON.parse(t)["tracks"]["items"].length === 0) { // Delete tracks if they can't be found through Spotify API search (e.g., user tracks)
-        result.songStats.delete(i);
-        document.querySelector("#progress").max = result.songStats.size;
-        document.querySelector("#popup-progress").max = result.songStats.size;
-        counter--;
-        return;
-      }
-
-      let track = JSON.parse(t)["tracks"]["items"][0];
-      s.spotifyID = track.id;
-      s.duration = track["duration_ms"];
-      s.artists = new Set();
-      if (track["album"]["images"].length > 0) {
-        s.image = track["album"]["images"][0]["url"];
-      } else {
-        s.image = null;
-      }
-      for (let iter = 0; iter < track["artists"].length; iter++) {
-        if (!result.artistStats.has(track["artists"][iter]["name"])) {
-          result.artistStats.set(track["artists"][iter]["name"], {
-            name: track["artists"][iter]["name"],
-            msPlayed: 0,
-            songs: new Set(),
-            streams: 0,
-            streamHistory: [{date: prevD, msPlayed: 0, streams: 0}]
-          });
-
-          if ([...result.uniqueArtists.values()][result.uniqueArtists.size - 1].date === approximateDate(s.endTime)) {
-            result.uniqueArtists.get(approximateDate(s.endTime)).count++;
-          } else {
-            result.uniqueArtists.set(approximateDate(s.endTime), {
-              date: approximateDate(s.endTime),
-              count: [...result.uniqueArtists.values()][result.uniqueArtists.size - 1].count + 1
-            });
-          }
+    let idList = "";
+    for (let j = 0; j < Math.min(slist.length - i, 50); j++) {
+      idList += slist[i + j].spotifyID + (j + 1 === Math.min(slist.length - i, 50) ? "" : ",");
+    }
+    httpGetAsync("https://api.spotify.com/v1/tracks?ids=" + encodeURIComponent(idList), (t) => {
+      let req = JSON.parse(t)["tracks"];
+      for (let j = 0; j < Math.min(sid.length - i, 50); j++) {
+        let track = result.songStats.get(sid[i + j]);
+        track.duration = req[j]["duration_ms"];
+        track.artists = new Set();
+        if (req[j]["album"]["images"].length > 0) {
+          track.image = req[j]["album"]["images"][0]["url"];
+        } else {
+          track.image = null;
         }
-        s.artists.add(track["artists"][iter]["name"]);
-        result.artistStats.get(track["artists"][iter]["name"]).songs.add(s.internalID);
+
+        for (let iter = 0; iter < req[j]["artists"].length; iter++) {
+          if (!result.artistStats.has(req[j]["artists"][iter]["id"])) {
+            result.artistStats.set(req[j]["artists"][iter]["id"], {
+              name: req[j]["artists"][iter]["name"],
+              genres: req[j]["artists"][iter]["genres"],
+              spotifyID: req[j]["artists"][iter]["id"],
+              msPlayed: 0,
+              songs: new Set(),
+              streams: 0,
+              streamHistory: [{date: prevD, msPlayed: 0, streams: 0}]
+            });
+
+            if ([...result.uniqueArtists.values()][result.uniqueArtists.size - 1].date === approximateDate(track.endTime)) {
+              result.uniqueArtists.get(approximateDate(track.endTime)).count++;
+            } else {
+              result.uniqueArtists.set(approximateDate(track.endTime), {
+                date: approximateDate(track.endTime),
+                count: [...result.uniqueArtists.values()][result.uniqueArtists.size - 1].count + 1
+              });
+            }
+          }
+          track.artists.add(req[j]["artists"][iter]["id"]);
+          result.artistStats.get(req[j]["artists"][iter]["id"]).songs.add(track.spotifyID);
+        }
+        delete track.artistName;
+        result.songStats.set(track.spotifyID, track);
+
+        document.querySelector("#progress").value = ++counter;
+        document.querySelector("#popup-progress").value = counter;
+        document.querySelector("#progress-label").innerText = `Importing track ${counter} of ${result.songStats.size} [${Math.round(100.0 * counter / result.songStats.size)}%]`;
+        document.querySelector("#popup-progress-label").innerText = `Importing track ${counter} of ${result.songStats.size} [${Math.round(100.0 * counter / result.songStats.size)}%]`;
       }
-      delete s.artistName;
     });
-    document.querySelector("#progress").value = ++counter;
-    document.querySelector("#popup-progress").value = counter;
-    document.querySelector("#progress-label").innerText = `Importing track ${counter} of ${result.songStats.size} [${Math.round(100.0 * counter / result.songStats.size)}%]`;
-    document.querySelector("#popup-progress-label").innerText = `Importing track ${counter} of ${result.songStats.size} [${Math.round(100.0 * counter / result.songStats.size)}%]`;
+
     await sleep(1000 / QUERY_RATE_PER_SECOND);
   }
 
   counter = 0;
   document.querySelector("#progress").max = result.artistStats.size;
   document.querySelector("#popup-progress").max = result.artistStats.size;
-  for (let [i, a] of result.artistStats) {
+
+  let aid = Array.from(result.artistStats.keys());
+  let alist = Array.from(result.artistStats.values());
+  for (let i = 0; i < alist.length; i += 50) {
     if (EXCEEDED_REQUEST_LIMIT) {
       break;
     }
-    httpGetAsync("https://api.spotify.com/v1/search?q=" + encodeURIComponent("artist:" + a.name) + "&type=artist&limit=1", (t) => {
-      if (JSON.parse(t)["artists"]["items"].length === 0) {
-        result.artistStats.delete(i);
-        document.querySelector("#progress").max = result.artistStats.size;
-        document.querySelector("#popup-progress").max = result.artistStats.size;
-        counter--;
-        return;
-      }
-      let artist = JSON.parse(t)["artists"]["items"][0];
-      a.spotifyID = artist.id;
-      if (artist["images"].length > 0) {
-        a.image = artist["images"][0]["url"];
-      } else {
-        a.image = null;
+    let idList = "";
+    for (let j = 0; j < Math.min(alist.length - i, 50); j++) {
+      idList += aid[i + j] + (j + 1 === Math.min(alist.length - i, 50) ? "" : ",");
+    }
+    httpGetAsync("https://api.spotify.com/v1/artists?ids=" + encodeURIComponent(idList), (t) => {
+      let req = JSON.parse(t)["artists"];
+      for (let j = 0; j < Math.min(aid.length - i, 50); j++) {
+        result.artistStats.get(aid[i + j]).image = (req[j]["images"] && req[j]["images"].length > 0) ? req[j]["images"][0]["url"] : null;
+
+        document.querySelector("#progress").value = ++counter;
+        document.querySelector("#popup-progress").value = counter;
+        document.querySelector("#progress-label").innerText = `Importing artist ${counter} of ${result.artistStats.size} [${Math.round(100.0 * counter / result.artistStats.size)}%]`;
+        document.querySelector("#popup-progress-label").innerText = `Importing artist ${counter} of ${result.artistStats.size} [${Math.round(100.0 * counter / result.artistStats.size)}%]`;
       }
     });
-    document.querySelector("#progress").value = ++counter;
-    document.querySelector("#progress-label").innerText = `Importing artist ${counter} of ${result.artistStats.size} [${Math.round(100.0 * counter / result.artistStats.size)}%]`;
-    document.querySelector("#popup-progress").value = counter;
-    document.querySelector("#popup-progress-label").innerText = `Importing artist ${counter} of ${result.artistStats.size} [${Math.round(100.0 * counter / result.artistStats.size)}%]`;
+
     await sleep(1000 / QUERY_RATE_PER_SECOND);
   }
 
-  document.querySelector("#progress-label").innerText = `Loading...`;
-  document.querySelector("#popup-progress-label").innerText = `Loading...`;
 
-  data.forEach((e) => {
-    let temp = result.songStats.get(stringHash(e.trackName + e.artistName));
-    if (temp === undefined) return;
+  counter = 0;
+  document.querySelector("#progress").max = data.length;
+  document.querySelector("#popup-progress").max = data.length;
+
+  for (const e of data) {
+    let temp = result.songStats.get(e.spotifyID);
+    if (temp === undefined) continue;
     temp.msPlayed += e.msPlayed;
     temp.streams += Math.ceil(e.msPlayed / temp.duration);
     temp.streamHistory.push({date: e.endTime, msPlayed: temp.msPlayed, streams: temp.streams});
     delete temp.endTime;
-    result.songStats.set(stringHash(e.trackName + e.artistName), temp);
+    result.songStats.set(temp.spotifyID, temp);
 
     result.history.set(e.endTime, {
       date: e.endTime,
@@ -327,12 +374,22 @@ async function summaryStatistics(data) {
       temp = result.artistStats.get(artists[k]);
       if (temp === undefined) continue;
       temp.msPlayed += e.msPlayed;
-      temp.streams += Math.ceil(e.msPlayed / result.songStats.get(stringHash(e.trackName + e.artistName)).duration);
+      temp.streams += Math.ceil(e.msPlayed / result.songStats.get(e.spotifyID).duration);
       temp.streamHistory.push({date: e.endTime, msPlayed: temp.msPlayed, streams: temp.streams});
 
       result.artistStats.set(artists[k], temp);
     }
-  });
+
+    document.querySelector("#progress").value = ++counter;
+    document.querySelector("#popup-progress").value = counter;
+    document.querySelector("#progress-label").innerText = `Importing stream ${counter} of ${data.length} [${Math.round(100.0 * counter / data.length)}%]`;
+    document.querySelector("#popup-progress-label").innerText = `Importing stream ${counter} of ${data.length} [${Math.round(100.0 * counter / data.length)}%]`;
+  }
+
+
+  counter = 0;
+  document.querySelector("#progress").max = Math.ceil(result.songStats.size / 50.0);
+  document.querySelector("#popup-progress").max = Math.ceil(result.songStats.size / 50.0);
 
   let songIDList = Array.from(result.songStats.keys());
   let songList = Array.from(result.songStats.values());
@@ -342,7 +399,7 @@ async function summaryStatistics(data) {
     }
     let idList = "";
     for (let j = 0; j < Math.min(songList.length - i, 50); j++) {
-      idList += songList[i + j].spotifyID + (j + 1 === Math.min(songList.length - i * 50, 50) ? "" : ",");
+      idList += songList[i + j].spotifyID + (j + 1 === Math.min(songList.length - i, 50) ? "" : ",");
     }
     httpGetAsync("https://api.spotify.com/v1/audio-features?ids=" + encodeURIComponent(idList), (t) => {
       let req = JSON.parse(t)["audio_features"];
@@ -357,18 +414,24 @@ async function summaryStatistics(data) {
         track.tempo = req[j]["tempo"];
         track.time_signature = req[j]["time_signature"];
         track.valence = req[j]["valence"];
-        result.songStats.set(songIDList[i + j], track);
+        result.songStats.set(track.spotifyID, track);
       }
     });
+    document.querySelector("#progress").value = ++counter;
+    document.querySelector("#popup-progress").value = counter;
+    document.querySelector("#progress-label").innerText = `Importing song characteristics ${counter} of ${Math.ceil(result.songStats.size / 50.0)} [${Math.round(100.0 * counter / Math.ceil(result.songStats.size / 50.0))}%]`;
+    document.querySelector("#popup-progress-label").innerText = `Importing song characteristics ${counter} of ${Math.ceil(result.songStats.size / 50.0)} [${Math.round(100.0 * counter / Math.ceil(result.songStats.size / 50.0))}%]`;
     await sleep(1000 / QUERY_RATE_PER_SECOND);
   }
 
   // Other useful information
   result.activeDays = new Set(data.map(d => approximateDate(d.endTime)));
   result.accountAge = Math.round((result.endDate - result.startDate) / (1000.0 * 3600.0 * 24.0));
+  result.username = USERNAME;
 
   document.querySelector("#progress-container").style.display = "none";
   document.querySelector("#popup-progress-container").style.display = "none";
+
   return result;
 }
 
@@ -462,7 +525,7 @@ async function refreshDashboard(d, dateMin, dateMax) {
 
     // Add event listener to display popup on click, and append to DOM
     let item = document.importNode(templateArtists.querySelector("tr"), true);
-    item.onclick = () => moreInfo("artist", data, sortedArtists[i].name);
+    item.onclick = () => moreInfo("artist", data, sortedArtists[i].spotifyID);
     document.querySelector("#favorites-artists-table").appendChild(item);
 
     templateSongs.querySelectorAll("tr td")[0].innerText = `${(i + 1)}`;
@@ -471,7 +534,7 @@ async function refreshDashboard(d, dateMin, dateMax) {
     templateSongs.querySelector(".text-sub").innerText = `${commafy(Math.round(getStreamStats(sortedSongs[i], "msPlayed", min, max) / 1000.0 / 60.0))} minutes | ${commafy(getStreamStats(sortedSongs[i], "streams", min, max))} streams`;
 
     item = document.importNode(templateSongs.querySelector("tr"), true);
-    item.onclick = () => moreInfo("song", data, sortedSongs[i].internalID);
+    item.onclick = () => moreInfo("song", data, sortedSongs[i].spotifyID);
     document.querySelector("#favorites-songs-table").appendChild(item);
   }
 }
@@ -486,7 +549,10 @@ function getStreamStats(item, property, min, max) {
     return new Date(d.date) - new Date(max) <= 0
   });
   j = j >= 0 ? j : item.streamHistory.length - 1;
-  return item.streamHistory[j][property] - item.streamHistory[i][property];
+
+  let a = j >= 0 ? item.streamHistory[j][property] : 0;
+  let b = i >= 0 ? item.streamHistory[i][property] : 0;
+  return a - b;
 }
 
 // History (go back) functionality
@@ -558,7 +624,7 @@ export function moreInfo(type, data, id) {
       templateSongs.querySelector(".text-main").innerText = `${song.trackName}`;
       templateSongs.querySelector(".text-sub").innerText = `${commafy(Math.round(getStreamStats(song, "msPlayed", data.startDate, data.endDate) / 1000.0 / 60.0))} minutes | ${commafy(getStreamStats(song, "streams", data.startDate, data.endDate))} streams`;
       let item = document.importNode(templateSongs.querySelector("tr"), true);
-      item.onclick = () => moreInfo("song", data, song.internalID);
+      item.onclick = () => moreInfo("song", data, song.spotifyID);
       document.querySelector("#popup-songs-table").appendChild(item);
     }
   } else {
@@ -570,7 +636,7 @@ export function moreInfo(type, data, id) {
     span.innerHTML = ", ";
     for (let i = 0; i < song.artists.size; i++) {
       let element = document.createElement("a");
-      element.innerHTML = [...song.artists][i];
+      element.innerHTML = data.artistStats.get([...song.artists][i]).name;
       element.onclick = () => {
         moreInfo("artist", data, [...song.artists][i])
       };
@@ -686,19 +752,6 @@ function getLaterDate(arr, date) {
 // Returns simplified string representation of date (yyyy-mm-dd)
 function approximateDate(d) {
   return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate();
-}
-
-// Converts string to a hash
-function stringHash(string) {
-  let hash = 0;
-  if (string.length === 0) return hash;
-  for (let i = 0; i < string.length; i++) {
-    let char = string.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash;
-  }
-
-  return hash;
 }
 
 // API requests helper

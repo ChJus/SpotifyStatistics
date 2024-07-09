@@ -26,16 +26,16 @@ document.querySelector("#calendar-year").onchange = () => refreshCalendarGraph(I
 
 
 export function refreshGraphs(data, min, max) {
-  refreshCalendarGraph(data);
   refreshOverallStreamsGraph(data, min, max);
   refreshTimeOfDayGraph(data, min, max);
   refreshDayOfWeekGraph(data, min, max);
+  refreshCalendarGraph(data);
   refreshGenreAnalysisGraph(data);
 }
 
 function refreshCalendarGraph(data) {
   data = structuredClone(data);
-  let dataYear = document.querySelector("#calendar-year"), factor = document.querySelector("#calendar-factor").value;
+  let dataYear = document.querySelector("#calendar-year").value, factor = document.querySelector("#calendar-factor").value;
   let [startYear, endYear] = d3.extent([...data.history.values()], d => new Date(d.date).getFullYear());
 
   let select = document.querySelector("#calendar-year");
@@ -45,15 +45,15 @@ function refreshCalendarGraph(data) {
     let opt = document.createElement('option');
     opt.value = i;
     opt.innerHTML = i;
-    if (dataYear !== null && dataYear === startYear) opt.selected = true;
+    if (dataYear === i.toString()) opt.selected = true;
     select.appendChild(opt);
   }
-  dataYear = startYear;
+  dataYear = dataYear !== '' ? dataYear : startYear;
 
   let dataset = [];
   if (factor === "msPlayed" || factor === "streams") {
     let min = new Date(dataYear + "-1-1"),
-        max = new Date(dataYear+1 + "-1-1");
+        max = new Date((parseInt(dataYear) + 1) + "-1-1");
 
     let d = [...data.history.values()];
     for (let i = 0; i < d.length; i++) {
@@ -77,15 +77,15 @@ function refreshCalendarGraph(data) {
     }
   } else {
     let min = new Date(dataYear + "-1-1"),
-      max = new Date(dataYear+1 + "-1-1");
+      max = new Date((parseInt(dataYear) + 1) + "-1-1");
 
     let d = [...data.songStats.values()];
     dataset = new Map();
     for (let i = 0; i < d.length; i++) {
       for (let j = 1; j < d[i].streamHistory.length; j++) {
-        if (new Date(d[i].date) - new Date(min) < 0) {
+        if (new Date(d[i].streamHistory[j].date) - new Date(min) < 0) {
           continue;
-        } else if (new Date(d[i].date) - new Date(max) > 0) {
+        } else if (new Date(d[i].streamHistory[j].date) - new Date(max) > 0) {
           break;
         }
         if (dataset.has(approximateDate(new Date(d[i].streamHistory[j].date)))) {
@@ -107,48 +107,47 @@ function refreshCalendarGraph(data) {
     })
   }
 
-    const width = document.querySelector("#calendar-graph").clientWidth; // width of the chart
-    const cellSize = 15, cellMargin = 1;
-    const height = cellSize * 9; // height of a week (7 days + padding)
+  const width = document.querySelector("#calendar-graph").clientWidth; // width of the chart
+  const cellSize = 15, cellMargin = 1;
+  const height = cellSize * 9; // height of a week (7 days + padding)
 
-    // Define formatting functions for the axes and tooltips.
-    const formatDate = d3.timeFormat("%x");
-    const formatDay = i => "MTWTFSS"[i];
-    const formatMonth = d3.timeFormat("%b");
+  // Define formatting functions for the axes and tooltips.
+  const formatDay = i => "MTWTFSS"[i];
+  const formatMonth = d3.timeFormat("%b");
 
-    // Helpers to compute a day’s position in the week.
-    const timeWeek = d3.utcSunday;
-    const countDay = i => (i) % 7;
+  // Helpers to compute a day’s position in the week.
+  const timeWeek = d3.utcSunday;
+  const countDay = i => (i) % 7;
 
-    // Compute the extent of the value, ignore the outliers
-    // and define a diverging and symmetric color scale.
-    const max = d3.quantile(dataset, 0.9975, d => d.value);
-    let color;
+  // Compute the extent of the value, ignore the outliers
+  // and define a diverging and symmetric color scale.
+  const max = d3.quantile(dataset, 0.9975, d => d.value);
+  let color;
 
-    switch(factor) {
-      case "msPlayed":
-      case "streams":
-        color = d3.scaleSequential(d3.interpolateRgb("rgb(20, 20, 20)", "#1DB954")).domain([0, +max]);
-        break;
-      case "energy":
-        color = d3.scaleSequential(d3.interpolateRgbBasis(["#60558a", "#b5576c", "#f6a161", "#ffdd85", "#F7EBAB"])).domain(d3.extent(dataset, d => d.value));
-        break;
-      case "valence":
-        color = d3.scaleSequential(d3.interpolateRgbBasis(["#495d7a", "#48a59a", "#f1b064", "#ffe23f", "#F7EBAB"])).domain(d3.extent(dataset, d => d.value));
-        break;
-    }
+  switch(factor) {
+    case "msPlayed":
+    case "streams":
+      color = d3.scaleSequential(d3.interpolateRgb("rgb(20, 20, 20)", "#1DB954")).domain([0, +max]);
+      break;
+    case "energy":
+      color = d3.scaleSequential(d3.interpolateRgbBasis(["#60558a", "#b5576c", "#f6a161", "#ffdd85", "#F7EBAB"])).domain(d3.extent(dataset, d => d.value));
+      break;
+    case "valence":
+      color = d3.scaleSequential(d3.interpolateRgbBasis(["#495d7a", "#48a59a", "#f1b064", "#ffe23f", "#F7EBAB"])).domain(d3.extent(dataset, d => d.value));
+      break;
+  }
 
-    // Group data by year, in reverse input order. (Since the dataset is chronological,
-    // this will show years in reverse chronological order.)
-    const years = d3.groups(dataset, d => new Date(d.date).getUTCFullYear()).reverse();
+  // Group data by year, in reverse input order. (Since the dataset is chronological,
+  // this will show years in reverse chronological order.)
+  const years = d3.groups(dataset, d => new Date(d.date).getUTCFullYear()).reverse();
 
-    // A function that draws a thin white line to the left of each month.
-    function pathMonth(t) {
-    const d = Math.max(0, Math.min(7, countDay(t.getUTCDay() + 6)));
-    const w = timeWeek.count(d3.utcYear(t), t);
-    return `${d === 0 ? `M${w * cellSize},0`
-      : d === 7 ? `M${(w + 1) * cellSize},0`
-        : `M${(w + 1) * cellSize},0V${d * cellSize}H${w * cellSize}`}V${7 * cellSize}`;
+  // A function that draws a thin white line to the left of each month.
+  function pathMonth(t) {
+  const d = Math.max(0, Math.min(7, countDay(t.getUTCDay() + 6)));
+  const w = timeWeek.count(d3.utcYear(t), t);
+  return `${d === 0 ? `M${w * cellSize},0`
+    : d === 7 ? `M${(w + 1) * cellSize},0`
+      : `M${(w + 1) * cellSize},0V${d * cellSize}H${w * cellSize}`}V${7 * cellSize}`;
   }
 
   const svg = d3.create("svg")
@@ -281,7 +280,7 @@ function refreshCalendarGraph(data) {
   }
 
   if (document.querySelector("#calendar-graph svg") !== null) {
-  document.querySelector("#calendar-graph svg").remove();
+    document.querySelector("#calendar-graph svg").remove();
   }
   document.querySelector("#calendar-graph").appendChild(svg.node());
 }
@@ -660,9 +659,13 @@ function refreshGenreAnalysisGraph(data) {
   node
     .on("mouseover mousemove", mousemove)
     .on("mouseleave", mouseleave)
-    .on("click", (e, d) => INDEX.moreInfo("song", originalData, data[d.index].internalID));
+    .on("click", (e, d) => INDEX.moreInfo("song", originalData, data[d.index].spotifyID));
 
   function mousemove(event, d) {
+    let artists = [];
+    for (let id of [...data[d.index].artists]) artists.push(originalData.artistStats.get(id).name)
+
+
     tooltip.style.display = "inline-block";
     d3.select("#oneD-song-genre-force-tooltip").transition().duration(100).style("opacity", 1)
     tooltip.style.position = "absolute";
@@ -670,7 +673,7 @@ function refreshGenreAnalysisGraph(data) {
     tooltip.style.top = `${margin.top + margin.bottom + 80 + tooltip.clientHeight / 2 + d.y}px`;
     tooltip.innerHTML = `
       <span><strong>Song</strong>: ${data[d.index].trackName}</span><br/>
-      <span><strong>By</strong>: ${[...data[d.index].artists].toString().replaceAll(",", ", ")}</span><br/>
+      <span><strong>By</strong>: ${artists.toString().replaceAll(",", ", ")}</span><br/>
       <span><strong>${attr}</strong>: ${data[d.index][attr]}</span>
     `;
     document.querySelector("#oneD-song-genre-force .tooltip-point").data = d;

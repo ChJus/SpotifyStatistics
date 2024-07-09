@@ -11,7 +11,6 @@ Enhancements
 ❌ Optimize serialization storage consumption
 ❌ Error handling: overflow of localStorage, invalid JSON/txt
 ❌ Allow sort option by stream count or by stream time
-❌ Transition to accept .zip instead of single json file
 ❌ Increase requests per second to API? (Apply for extension as app)
 ❌ Convert song characteristics to graph/scale form? (e.g., valence)
 ❌ Reduce code redundancy and improve code modularity, maintainability
