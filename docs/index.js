@@ -98,17 +98,14 @@ if (localStorage.hasOwnProperty("data")) {
 document.querySelector("#popup-file").accept = "application/json,text/plain,application/zip";
 document.querySelector("#popup-file").onchange = async (e) => {
   document.querySelector("#download").style.display = "none";
-  await f(e).then((data) => {
-    refreshDashboard(data, data.startDate, data.endDate);
-    document.querySelector("#popup-container").style.display = "none";
-    document.querySelector("#download").style.display = "inline-block";
-  });
+  await f(e);
 };
 
 // Users use this selector to update data by uploading either data from Spotify or from this site
 document.querySelector("#file").accept = "application/json,text/plain,application/zip";
 document.querySelector("#file").onchange = async (e) => {
-  await f(e).then(() => location.reload);
+  await f(e);
+  location.reload();
 };
 
 async function f(e) {
@@ -117,27 +114,28 @@ async function f(e) {
   let text = await file.text();
   if (file.type === "application/json") {
     readData(text);
-    processedData = await summaryStatistics(data);
+    await summaryStatistics(data);
     localStorage.setItem("data", await serialize(processedData));
   } else if (file.type === "application/zip") {
     let zip = await JSZip.loadAsync(file);
     let filename = [...Object.values(zip.files)].filter(d => d.name.includes(".json"))[0].name;
-    zip.file(filename).async("text").then(async text => {
-      readData(text);
-      processedData = await summaryStatistics(data);
-      localStorage.setItem("data", await serialize(processedData));
-    })
+    let text = await zip.file(filename).async("text");
+    readData(text);
+    await summaryStatistics(data);
+    localStorage.setItem("data", await serialize(processedData));
   } else {
     processedData = await deserialize(text);
     localStorage.setItem("data", text);
   }
-
   // todo: is this line needed?
   // remove overall graphs so when refreshDashboard is called, graphs are replaced with new data
   // the removal is important as the graph function will check if there are existing svg elements
   // (if there are, only the date range of the functions will change; *data* won't change)
   // document.querySelector("#overall-graphs svg").remove();
-  return processedData;
+
+  refreshDashboard(processedData, processedData.startDate, processedData.endDate);
+  document.querySelector("#popup-container").style.display = "none";
+  document.querySelector("#download").style.display = "inline-block";
 }
 
 let USERNAME;
@@ -411,7 +409,7 @@ async function summaryStatistics(data) {
   result.accountAge = Math.round((result.endDate - result.startDate) / (1000.0 * 3600.0 * 24.0));
   result.spotifyID = USERNAME;
 
-  httpGetAsync("https://api.spotify.com/v1/users/" + encodeURIComponent(USERNAME), (t) => {
+  await httpGetAsync("https://api.spotify.com/v1/users/" + encodeURIComponent(USERNAME), (t) => {
     let req = JSON.parse(t);
     result.username = (req["display_name"] === undefined ? "User" : req["display_name"]);
     result.userImage = req["images"][req["images"].length - 1]["url"];
@@ -422,7 +420,7 @@ async function summaryStatistics(data) {
   document.querySelector("#progress-container").style.display = "none";
   document.querySelector("#popup-progress-container").style.display = "none";
 
-  return result;
+  processedData = result;
 }
 
 // Update all information displays based on data and time range
@@ -778,7 +776,7 @@ function httpGetAsync(theUrl, callback) {
 }
 
 // Delay function (like Thread.sleep)
-function sleep(ms) {
+async function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
