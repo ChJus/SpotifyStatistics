@@ -129,6 +129,10 @@ body {
     background-color: var(--foreground-color);
     margin: auto 40px;
     vertical-align: center;
+
+    img {
+      width: 100%;
+    }
   }
 
   #profile-right {

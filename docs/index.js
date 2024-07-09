@@ -6,12 +6,12 @@ let QUERY_RATE_PER_SECOND = 6.0;
 export let processedData, data;
 
 // API
-let i1 = "NmQyMDhlNGY3NzZiNGMxNmI0ODk2M2NkMTEwZWQwODQ=", i2 = "YWIyMTQ3MGIzN2VkNGFlYmI2NjY4Y2NlMjRmZDQyMDM="
+let i1 = "ZjI1MjU4NzBkNzQ3NDk2NDg4MDk5NDE2MmIyODkzYzQ=", i2 = "YzhhMzc3MTk1NThmNGI0NTg4MmM2ZGNkODNjOTEzNmU="
 i1 = atob(i1);
 i2 = atob(i2);
 
 // localStorage helper cache functions
-const serialize = (value) => JSON.stringify(value, stringifyReplacer);
+const serialize = async (value) => JSON.stringify(value, stringifyReplacer);
 const deserialize = async (text) => JSON.parse(text, parseReviver);
 
 // Initial visibility is hidden for download (waits until file is uploaded)
@@ -20,7 +20,7 @@ document.querySelector("#download").style.display = "none";
 
 // Add event listeners to time frequency range buttons
 document.querySelectorAll("#settings button").forEach(button => {
-  button.onclick = async (e) => {
+  button.onclick = (e) => {
     // Only highlight selected range (acts as toggle, similar to radio button group)
     document.querySelectorAll("#settings button").forEach(button => {
       button.classList.remove("active");
@@ -42,7 +42,7 @@ document.querySelectorAll("#settings button").forEach(button => {
     }
 
     let [sd, ed] = getDateRange(); // start date, end date
-    await refreshDashboard(processedData, sd, ed);
+    refreshDashboard(processedData, sd, ed);
   }
 })
 
@@ -83,14 +83,14 @@ export function getDateRange() {
 }
 
 // Obtain credentials for API calls
-await login();
+login();
 
 // Check if there is data cached in localStorage
 if (localStorage.hasOwnProperty("data")) {
   document.querySelector("#popup-container").style.display = "none";
   processedData = await deserialize(localStorage.getItem("data"));
   document.querySelector("#download").style.display = "inline-block";
-  await refreshDashboard(processedData, processedData.startDate, processedData.endDate);
+  refreshDashboard(processedData, processedData.startDate, processedData.endDate);
 }
 
 // Code for handling file selectors
@@ -98,69 +98,52 @@ if (localStorage.hasOwnProperty("data")) {
 document.querySelector("#popup-file").accept = "application/json,text/plain,application/zip";
 document.querySelector("#popup-file").onchange = async (e) => {
   document.querySelector("#download").style.display = "none";
-  // Get file and read text
-  let file = e.target.files.item(0);
-  let text = await file.text();
-
-  // todo: error handling
-  if (file.type === "application/json") {
-    await readData(text);
-    processedData = await summaryStatistics(data);
-    localStorage.setItem("data", serialize(processedData));
-  } else if (file.type === "application/zip") {
-    let zip = await JSZip.loadAsync(file);
-    let filename = [...Object.values(zip.files)].filter(d => d.name.includes(".json"))[0].name;
-    await zip.file(filename).async("text").then(async text => {
-      await readData(text);
-      processedData = await summaryStatistics(data);
-      localStorage.setItem("data", serialize(processedData));
-    })
-  } else { // todo: error handle, alternatively, upload a .txt file with data downloaded from this site using the download functionality
-    processedData = await deserialize(text);
-    localStorage.setItem("data", text);
-  }
-  await refreshDashboard(processedData, processedData.startDate, processedData.endDate);
-  document.querySelector("#popup-container").style.display = "none";
-  document.querySelector("#download").style.display = "inline-block";
+  await f(e).then((data) => {
+    refreshDashboard(data, data.startDate, data.endDate);
+    document.querySelector("#popup-container").style.display = "none";
+    document.querySelector("#download").style.display = "inline-block";
+  });
 };
 
 // Users use this selector to update data by uploading either data from Spotify or from this site
 document.querySelector("#file").accept = "application/json,text/plain,application/zip";
 document.querySelector("#file").onchange = async (e) => {
-  async function f(e) {
-    let file = e.target.files.item(0);
-    let text = await file.text();
-    if (file.type === "application/json") {
-      await readData(text);
-      processedData = await summaryStatistics(data);
-      localStorage.setItem("data", serialize(processedData));
-    } else if (file.type === "application/zip") {
-      let zip = await JSZip.loadAsync(file);
-      let filename = [...Object.values(zip.files)].filter(d => d.name.includes(".json"))[0].name;
-      zip.file(filename).async("text").then(async text => {
-        await readData(text);
-        processedData = await summaryStatistics(data);
-        localStorage.setItem("data", serialize(processedData));
-      })
-    } else {
-      processedData = await deserialize(text);
-      localStorage.setItem("data", text);
-    }
-
-    // todo: is this line needed?
-    // remove overall graphs so when refreshDashboard is called, graphs are replaced with new data
-    // the removal is important as the graph function will check if there are existing svg elements
-    // (if there are, only the date range of the functions will change; *data* won't change)
-    // document.querySelector("#overall-graphs svg").remove();
-  }
-  await f(e);
-  Promise.all([f(e)]).then(() => location.reload);
+  await f(e).then(() => location.reload);
 };
+
+async function f(e) {
+  // Get file and read text
+  let file = e.target.files.item(0);
+  let text = await file.text();
+  if (file.type === "application/json") {
+    readData(text);
+    processedData = await summaryStatistics(data);
+    localStorage.setItem("data", await serialize(processedData));
+  } else if (file.type === "application/zip") {
+    let zip = await JSZip.loadAsync(file);
+    let filename = [...Object.values(zip.files)].filter(d => d.name.includes(".json"))[0].name;
+    zip.file(filename).async("text").then(async text => {
+      readData(text);
+      processedData = await summaryStatistics(data);
+      localStorage.setItem("data", await serialize(processedData));
+    })
+  } else {
+    processedData = await deserialize(text);
+    localStorage.setItem("data", text);
+  }
+
+  // todo: is this line needed?
+  // remove overall graphs so when refreshDashboard is called, graphs are replaced with new data
+  // the removal is important as the graph function will check if there are existing svg elements
+  // (if there are, only the date range of the functions will change; *data* won't change)
+  // document.querySelector("#overall-graphs svg").remove();
+  return processedData;
+}
 
 let USERNAME;
 // Parse data from Spotify
-async function readData(text) {
-  data = await JSON.parse(text);
+function readData(text) {
+  data = JSON.parse(text);
   USERNAME = data[0].username;
 
   data = data.filter(d => (d["spotify_track_uri"] !== null) && d["ms_played"] >= 30000);
@@ -238,7 +221,7 @@ async function summaryStatistics(data) {
     endDate: endD,
   };
 
-  data.forEach((e) => {
+  for (const e of data) {
     if (!result.songStats.has(e.spotifyID)) {
       let song = structuredClone(e);
 
@@ -256,7 +239,7 @@ async function summaryStatistics(data) {
       song.streamHistory = [{date: prevD, msPlayed: 0, streams: 0}];
       result.songStats.set(e.spotifyID, song);
     }
-  });
+  }
 
   let counter = 0;
   document.querySelector("#progress").max = result.songStats.size;
@@ -386,7 +369,6 @@ async function summaryStatistics(data) {
     document.querySelector("#popup-progress-label").innerText = `Importing stream ${counter} of ${data.length} [${Math.round(100.0 * counter / data.length)}%]`;
   }
 
-
   counter = 0;
   document.querySelector("#progress").max = Math.ceil(result.songStats.size / 50.0);
   document.querySelector("#popup-progress").max = Math.ceil(result.songStats.size / 50.0);
@@ -427,7 +409,15 @@ async function summaryStatistics(data) {
   // Other useful information
   result.activeDays = new Set(data.map(d => approximateDate(d.endTime)));
   result.accountAge = Math.round((result.endDate - result.startDate) / (1000.0 * 3600.0 * 24.0));
-  result.username = USERNAME;
+  result.spotifyID = USERNAME;
+
+  httpGetAsync("https://api.spotify.com/v1/users/" + encodeURIComponent(USERNAME), (t) => {
+    let req = JSON.parse(t);
+    result.username = (req["display_name"] === undefined ? "User" : req["display_name"]);
+    result.userImage = req["images"][req["images"].length - 1]["url"];
+  });
+
+  await sleep(1000 / QUERY_RATE_PER_SECOND);
 
   document.querySelector("#progress-container").style.display = "none";
   document.querySelector("#popup-progress-container").style.display = "none";
@@ -436,7 +426,7 @@ async function summaryStatistics(data) {
 }
 
 // Update all information displays based on data and time range
-async function refreshDashboard(d, dateMin, dateMax) {
+function refreshDashboard(d, dateMin, dateMax) {
   // todo: see if can find way to efficiently find unique songs in range of time
   // todo: serialize with short field names, consider converting all ms to minutes
   // todo: handle case where storage overflows 5MB.
@@ -453,6 +443,15 @@ async function refreshDashboard(d, dateMin, dateMax) {
   let born = new Date(dateMax), upTo = new Date(dateMax);
   born.setDate(born.getDate() - data.accountAge + 1);
   upTo.setDate(upTo.getDate() - 1)
+
+  document.querySelector("#profile-right #name").innerText = data.username;
+
+  if (data.userImage) {
+    document.querySelector("#profile-left img").src = data.userImage;
+    document.querySelector("#profile-left").style.display = "block";
+  } else {
+    document.querySelector("#profile-left").style.display = "none";
+  }
 
   document.querySelector("#profile-right #lifespan").innerText = born.toLocaleDateString("en-US", dateFormat) + " — " + upTo.toLocaleDateString("en-US", dateFormat);
 
@@ -519,7 +518,7 @@ async function refreshDashboard(d, dateMin, dateMax) {
   // Display top 50 songs and artists
   for (let i = 0; i < 50; i++) {
     templateArtists.querySelectorAll("tr td")[0].innerText = `${(i + 1)}`;
-    templateArtists.querySelector(".img-div img").src = `${sortedArtists[i].image !== null ? sortedArtists[i].image : ''}`;
+    templateArtists.querySelector(".img-div img").src = `${sortedArtists[i].image ? sortedArtists[i].image : ''}`;
     templateArtists.querySelector(".text-main").innerText = `${sortedArtists[i].name}`;
     templateArtists.querySelector(".text-sub").innerText = `${commafy(Math.round(getStreamStats(sortedArtists[i], "msPlayed", min, max) / 1000.0 / 60.0))} minutes | ${commafy(getStreamStats(sortedArtists[i], "streams", min, max))} streams`;
 
@@ -529,7 +528,7 @@ async function refreshDashboard(d, dateMin, dateMax) {
     document.querySelector("#favorites-artists-table").appendChild(item);
 
     templateSongs.querySelectorAll("tr td")[0].innerText = `${(i + 1)}`;
-    templateSongs.querySelector(".img-div img").src = `${sortedSongs[i].image !== null ? sortedSongs[i].image : ''}`;
+    templateSongs.querySelector(".img-div img").src = `${sortedSongs[i].image ? sortedSongs[i].image : ''}`;
     templateSongs.querySelector(".text-main").innerText = `${sortedSongs[i].trackName}`;
     templateSongs.querySelector(".text-sub").innerText = `${commafy(Math.round(getStreamStats(sortedSongs[i], "msPlayed", min, max) / 1000.0 / 60.0))} minutes | ${commafy(getStreamStats(sortedSongs[i], "streams", min, max))} streams`;
 
@@ -540,15 +539,13 @@ async function refreshDashboard(d, dateMin, dateMax) {
 }
 
 // Get streaming statistics in a time range (as info is stored cumulatively)
-function getStreamStats(item, property, min, max) {
+function getStreamStats(item, property, min, max)  {
   let i = item.streamHistory.findIndex((d) => {
-    return new Date(d.date) - new Date(min) >= 0
-  });
-  i = i >= 0 ? i : 0;
+    return (new Date(d.date) - new Date(max) <= 0) && (new Date(d.date) - new Date(min) >= 0)
+  }) - 1;
   let j = item.streamHistory.findLastIndex((d) => {
-    return new Date(d.date) - new Date(max) <= 0
+    return (new Date(d.date) - new Date(max) <= 0) && (new Date(d.date) - new Date(min) >= 0)
   });
-  j = j >= 0 ? j : item.streamHistory.length - 1;
 
   let a = j >= 0 ? item.streamHistory[j][property] : 0;
   let b = i >= 0 ? item.streamHistory[i][property] : 0;
@@ -602,7 +599,14 @@ export function moreInfo(type, data, id) {
 
     document.querySelector("#popup-artist-wrapper").style.display = "flex";
     document.querySelector("#popup-song-wrapper").style.display = "none";
-    document.querySelector("#popup-artist-left-image-wrapper img").src = `${artist.image !== null ? artist.image : ''}`;
+
+    if (artist.image) {
+      document.querySelector("#popup-artist-left-image-wrapper img").src = artist.image;
+      document.querySelector("#popup-artist-left-image-wrapper").style.display = "block";
+    } else {
+      document.querySelector("#popup-artist-left-image-wrapper").style.display = "none";
+    }
+
     document.querySelector("#popup-artist-name").innerText = `${artist.name}`;
     document.querySelector("#popup-artist-stats").innerText = `${commafy(Math.round(getStreamStats(artist, "msPlayed", data.startDate, data.endDate) / 1000.0 / 60.0))} minutes | ${commafy(getStreamStats(artist, "streams", data.startDate, data.endDate))} streams`;
 
@@ -620,7 +624,7 @@ export function moreInfo(type, data, id) {
     for (let i = 0; i < sortedSongs.length; i++) {
       let song = data.songStats.get(sortedSongs[i]);
       templateSongs.querySelectorAll("tr td")[0].innerText = `${(i + 1)}`;
-      templateSongs.querySelector(".img-div img").src = `${song.image !== null ? song.image : ''}`;
+      templateSongs.querySelector(".img-div img").src = `${song.image ? song.image : ''}`;
       templateSongs.querySelector(".text-main").innerText = `${song.trackName}`;
       templateSongs.querySelector(".text-sub").innerText = `${commafy(Math.round(getStreamStats(song, "msPlayed", data.startDate, data.endDate) / 1000.0 / 60.0))} minutes | ${commafy(getStreamStats(song, "streams", data.startDate, data.endDate))} streams`;
       let item = document.importNode(templateSongs.querySelector("tr"), true);
@@ -648,7 +652,7 @@ export function moreInfo(type, data, id) {
 
     document.querySelector("#popup-song-wrapper").style.display = "flex";
     document.querySelector("#popup-artist-wrapper").style.display = "none";
-    document.querySelector("#popup-song-left-image-wrapper img").src = `${song.image !== null ? song.image : ''}`;
+    document.querySelector("#popup-song-left-image-wrapper img").src = `${song.image ? song.image : ''}`;
     document.querySelector("#popup-song-name").innerText = `${song.trackName}`;
     document.querySelector("#popup-song-stats").innerText = `${commafy(Math.round(getStreamStats(song, "msPlayed", data.startDate, data.endDate) / 1000.0 / 60.0))} minutes | ${commafy(getStreamStats(song, "streams", data.startDate, data.endDate))} streams`;
     document.querySelector("#song-acousticness").innerText = `${song.acousticness}`;
@@ -794,8 +798,8 @@ function login() {
 }
 
 // Download computed data (which user can upload to analyze)
-function download() {
-  let blob = new Blob([serialize(processedData)], {type: "text/plain;charset=utf-8"});
+async function download() {
+  let blob = new Blob([await serialize(processedData)], {type: "text/plain;charset=utf-8"});
   saveAs(blob, "data.txt");
 }
 
