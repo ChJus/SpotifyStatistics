@@ -3,6 +3,7 @@ import * as GRAPH from "./graph.js";
 // Global variables and constants
 let EXCEEDED_REQUEST_LIMIT = false;
 let QUERY_RATE_PER_SECOND = 6.0;
+let db; // global indexedDB instance
 export let processedData, data;
 
 // API
@@ -10,7 +11,7 @@ let i1 = "ZjI1MjU4NzBkNzQ3NDk2NDg4MDk5NDE2MmIyODkzYzQ=", i2 = "YzhhMzc3MTk1NThmN
 i1 = atob(i1);
 i2 = atob(i2);
 
-// localStorage helper cache functions
+// indexedDB helper cache functions
 const serialize = async (value) => JSON.stringify(value, stringifyReplacer);
 const deserialize = async (text) => JSON.parse(text, parseReviver);
 
@@ -85,12 +86,33 @@ export function getDateRange() {
 // Obtain credentials for API calls
 login();
 
-// Check if there is data cached in localStorage
-if (localStorage.hasOwnProperty("data")) {
-  document.querySelector("#popup-container").style.display = "none";
-  processedData = await deserialize(localStorage.getItem("data"));
-  document.querySelector("#download").style.display = "inline-block";
+// Initialize storage system
+await init();
+
+async function init() {
+  db = await idb.openDB('storage', 1, {
+    upgrade(db) {
+      db.createObjectStore('data');
+    }
+  });
+}
+
+async function getData() {
+  return db.get("data", "data")
+}
+
+async function saveData(data) {
+  await db.put("data", data, "data")
+}
+
+window.addEventListener('unhandledrejection', event => alert("Error: " + event.reason.message));
+
+// Check if there is data cached in indexedDB
+if ((await db.get("data", "data"))) {
+  processedData = await deserialize(await getData());
   refreshDashboard(processedData, processedData.startDate, processedData.endDate);
+  document.querySelector("#popup-container").style.display = "none";
+  document.querySelector("#download").style.display = "inline-block";
 }
 
 // Code for handling file selectors
@@ -115,17 +137,17 @@ async function f(e) {
   if (file.type === "application/json") {
     readData(text);
     await summaryStatistics(data);
-    localStorage.setItem("data", await serialize(processedData));
+    await saveData(await serialize(processedData));
   } else if (file.type === "application/zip") {
     let zip = await JSZip.loadAsync(file);
     let filename = [...Object.values(zip.files)].filter(d => d.name.includes(".json"))[0].name;
     let text = await zip.file(filename).async("text");
     readData(text);
     await summaryStatistics(data);
-    localStorage.setItem("data", await serialize(processedData));
+    await saveData(await serialize(processedData));
   } else {
     processedData = await deserialize(text);
-    localStorage.setItem("data", text);
+    await saveData(text);
   }
   // todo: is this line needed?
   // remove overall graphs so when refreshDashboard is called, graphs are replaced with new data

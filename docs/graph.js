@@ -109,7 +109,7 @@ function refreshCalendarGraph(data) {
   }
 
   const width = document.querySelector("#calendar-graph").clientWidth; // width of the chart
-  const cellSize = 15, cellMargin = 1;
+  const cellSize = width / 60, cellMargin = 1;
   const height = cellSize * 9; // height of a week (7 days + padding)
 
   // Define formatting functions for the axes and tooltips.

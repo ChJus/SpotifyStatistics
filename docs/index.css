@@ -783,6 +783,10 @@ svg {
   }
 }
 
+#calendar-graph svg {
+  height: fit-content;
+}
+
 #popup-artist-graph, #popup-song-graph {
   margin-bottom: 50px;
 }
