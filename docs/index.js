@@ -180,22 +180,19 @@ function readData(text) {
 }
 
 /*
-* Obtain summary statistics from data file and Spotify API.
-* NOTE: this process is done in *five* steps:
-* 1. Go through data file and create initial list of unique songs.
-*    Initialize each entry with attributes msPlayed, streamHistory, spotifyId, etc.
-*    Place this song entry into the songStats Map (where key is a string hash based on
-*    a string concatenation of the track's name and artists).
-*    Also, modify the uniqueSongs map, which represents a cumulative count of unique
-*    songs over time stored with unique dates as keys.
-* 2. Loop through each unique song and work with Spotify API. Obtain information about
-*    the song's spotifyID, duration, image, and artists. Also, assemble a list of unique
-*    artists, and initialize fields spotifyID, duration, and image. Modify uniqueArtists map
-*    to represent cumulative unique artists over time.
-* 3. Run through each artist and search for their metadata using Spotify API.
-* 4. Run through streaming data again and this time update streamingHistory for each song and artist.
-*    Also create list of cumulative streams and time by date.
-* 5. Obtain more song information from API (e.g., acousticness)
+* Obtain summary statistics from data file.
+* NOTE: this process is done in several steps:
+* 1. Go through streams and create a list of unique songs with initialized
+*    fields msPlayed, streams, streamHistory. Update entry in songStats (song statistics list)
+*    and uniqueSongs (keeping track of newly discovered songs by time)
+* 2. Call Spotify Tracks API, 50 tracks at a time, and obtain track image and artists.
+*    Initialize artistStats with artists from songs with fields name, genres, spotifyID,
+*    msPlayed, songs, streams, streamHistory.
+* 3. Call Spotify Artists API, 50 artists at a time, and obtain profile images.
+* 4. Re-run through streaming history (data) and update song and artist statistics
+*    (streaming time, streaming count).
+* 5. Re-run through songStats and call Spotify Audio Features API for track characteristics.
+* 6. Finally, compute general user information (account age, profile image, name, spotifyID)
 * */
 async function summaryStatistics(data) {
   document.querySelector("#progress-container").style.display = "block";
