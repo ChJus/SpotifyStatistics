@@ -6,6 +6,8 @@ Features
 ❌ Graph of song valence/energy (selectable) by time of day
 ❌ Have popup for calendar and overall graphs (e.g., display songs contributing to data point)
 ❌ Suggest songs to listen to?
+❌ Show playlists and contents
+❌ Custom time range selection and more temporal updates to data displays
 
 Enhancements
 ❌ Rework 'new songs' as unique songs streamed in period instead of new songs discovered during period
@@ -15,6 +17,8 @@ Enhancements
 ❌ Convert song characteristics to graph/scale form? (e.g., valence)
 ❌ Reduce code redundancy and improve code modularity, maintainability
 ❌ Add artists as linked sub-text to song listings
+❌ Link username to user profile on Spotify
+
 
 Bug fixes
 ❌ Check to see if updating data by uploading another file changes ALL information displays
