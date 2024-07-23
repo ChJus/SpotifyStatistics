@@ -784,7 +784,7 @@ svg {
 }
 
 #calendar-graph svg {
-  height: fit-content;
+  padding-top: 15px;
 }
 
 #popup-artist-graph, #popup-song-graph {

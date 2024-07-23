@@ -229,7 +229,7 @@ function refreshCalendarGraph(data) {
     d3.select("#calendar-tooltip").transition().duration(100).style("opacity", 1)
     tooltip.style.position = "absolute";
     tooltip.style.left = `${40.5 + Math.max(parseFloat(event.target.getAttribute("x")) - tooltip.clientWidth / 2, 0)}px`
-    tooltip.style.top = `${-10 + height - tooltip.clientHeight + parseFloat(event.target.getAttribute("y"))}px`;
+    tooltip.style.top = `${-10 + document.querySelector("#calendar-graph").clientHeight - height - tooltip.clientHeight / 2 + parseFloat(event.target.getAttribute("y"))}px`;
 
     switch (factor) {
       case "msPlayed":
