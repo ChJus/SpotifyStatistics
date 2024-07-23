@@ -206,10 +206,7 @@ function refreshCalendarGraph(data) {
 
   const month = year.append("g")
     .selectAll()
-    .data(([, values]) => {
-      console.log(values)
-      return d3.timeMonths(d3.timeMonth(values[0].date), values.at(-1).date)
-    })
+    .data(([, values]) => d3.timeMonths(d3.timeMonth(values[0].date), values.at(-1).date))
     .join("g");
 
   month.filter((d, i) => i).append("path")
