@@ -5,6 +5,7 @@ Features
 ❌ Allow album categorization and add genre metadata to songs and artists
 ❌ Graph of song valence/energy (selectable) by time of day
 ❌ Have popup for calendar and overall graphs (e.g., display songs contributing to data point)
+❌ Suggest songs to listen to?
 
 Enhancements
 ❌ Rework 'new songs' as unique songs streamed in period instead of new songs discovered during period

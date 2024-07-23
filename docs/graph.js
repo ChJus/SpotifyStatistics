@@ -105,6 +105,7 @@ function refreshCalendarGraph(data) {
       d.date = new Date(d.date);
       d.value = d.value / d.total;
     })
+    dataset.sort((a, b) => a.date - b.date);
   }
 
   const width = document.querySelector("#calendar-graph").clientWidth; // width of the chart
@@ -116,8 +117,8 @@ function refreshCalendarGraph(data) {
   const formatMonth = d3.timeFormat("%b");
 
   // Helpers to compute a day’s position in the week.
-  const timeWeek = d3.utcSunday;
-  const countDay = i => (i) % 7;
+  const timeWeek = d3.timeMonday;
+  const countDay = i => (i + 6) % 7;
 
   // Compute the extent of the value, ignore the outliers
   // and define a diverging and symmetric color scale.
@@ -139,12 +140,12 @@ function refreshCalendarGraph(data) {
 
   // Group data by year, in reverse input order. (Since the dataset is chronological,
   // this will show years in reverse chronological order.)
-  const years = d3.groups(dataset, d => new Date(d.date).getUTCFullYear()).reverse();
+  const years = d3.groups(dataset, d => new Date(d.date).getFullYear()).reverse();
 
   // A function that draws a thin white line to the left of each month.
   function pathMonth(t) {
-  const d = Math.max(0, Math.min(7, countDay(t.getUTCDay() + 6)));
-  const w = timeWeek.count(d3.utcYear(t), t);
+  const d = Math.max(0, Math.min(7, countDay(t.getDay())));
+  const w = timeWeek.count(d3.timeYear(t), t);
   return `${d === 0 ? `M${w * cellSize},0`
     : d === 7 ? `M${(w + 1) * cellSize},0`
       : `M${(w + 1) * cellSize},0V${d * cellSize}H${w * cellSize}`}V${7 * cellSize}`;
@@ -186,7 +187,7 @@ function refreshCalendarGraph(data) {
     .data(d3.range(0, 7))
     .join("text")
     .attr("x", -5)
-    .attr("y", i => (countDay(i) + 0.5) * cellSize)
+    .attr("y", i => (i + 0.5) * cellSize)
     .attr("dy", "0.31em")
     .attr("fill", "var(--foreground-color)")
     .text(formatDay);
@@ -197,15 +198,18 @@ function refreshCalendarGraph(data) {
     .join("rect")
     .attr("width", cellSize - cellMargin * 2)
     .attr("height", cellSize - cellMargin * 2)
-    .attr("x", d => timeWeek.count(d3.utcYear(d.date), d.date) * cellSize + cellMargin)
-    .attr("y", d => countDay(d.date.getUTCDay()) * cellSize + cellMargin)
+    .attr("x", d => timeWeek.count(d3.timeYear(d.date), d.date) * cellSize + cellMargin)
+    .attr("y", d => countDay(d.date.getDay()) * cellSize + cellMargin)
     .attr("fill", d => color(d.value))
     .on("mouseover mousemove", mousemove)
     .on("mouseleave", mouseleave);
 
   const month = year.append("g")
     .selectAll()
-    .data(([, values]) => d3.utcMonths(d3.utcMonth(values[0].date), values.at(-1).date))
+    .data(([, values]) => {
+      console.log(values)
+      return d3.timeMonths(d3.timeMonth(values[0].date), values.at(-1).date)
+    })
     .join("g");
 
   month.filter((d, i) => i).append("path")
@@ -215,7 +219,7 @@ function refreshCalendarGraph(data) {
     .attr("d", pathMonth);
 
   month.append("text")
-    .attr("x", d => timeWeek.count(d3.utcYear(d), timeWeek.ceil(d)) * cellSize + 2)
+    .attr("x", d => timeWeek.count(d3.timeYear(d), timeWeek.ceil(d)) * cellSize + 2)
     .attr("y", -5)
     .attr("fill", "var(--foreground-color)")
     .text(formatMonth);

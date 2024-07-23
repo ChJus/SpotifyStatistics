@@ -409,7 +409,7 @@ async function summaryStatistics(data) {
   result.accountAge = Math.round((result.endDate - result.startDate) / (1000.0 * 3600.0 * 24.0));
   result.spotifyID = USERNAME;
 
-  await httpGetAsync("https://api.spotify.com/v1/users/" + encodeURIComponent(USERNAME), (t) => {
+  httpGetAsync("https://api.spotify.com/v1/users/" + encodeURIComponent(USERNAME), (t) => {
     let req = JSON.parse(t);
     result.username = (req["display_name"] === undefined ? "User" : req["display_name"]);
     result.userImage = req["images"][req["images"].length - 1]["url"];
