@@ -11,14 +11,9 @@ Features
 
 Enhancements
 ❌ Rework 'new songs' as unique songs streamed in period instead of new songs discovered during period
-❌ Optimize serialization storage consumption
-❌ Error handling: overflow of localStorage, invalid JSON/txt
+❌ Error handling: invalid JSON/txt
 ❌ Allow sort option by stream count or by stream time
 ❌ Convert song characteristics to graph/scale form? (e.g., valence)
 ❌ Reduce code redundancy and improve code modularity, maintainability
 ❌ Add artists as linked sub-text to song listings
 ❌ Link username to user profile on Spotify
-
-
-Bug fixes
-❌ Check to see if updating data by uploading another file changes ALL information displays

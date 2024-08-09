@@ -149,11 +149,6 @@ async function f(e) {
     processedData = await deserialize(text);
     await saveData(text);
   }
-  // todo: is this line needed?
-  // remove overall graphs so when refreshDashboard is called, graphs are replaced with new data
-  // the removal is important as the graph function will check if there are existing svg elements
-  // (if there are, only the date range of the functions will change; *data* won't change)
-  // document.querySelector("#overall-graphs svg").remove();
 
   refreshDashboard(processedData, processedData.startDate, processedData.endDate);
   document.querySelector("#popup-container").style.display = "none";
@@ -446,7 +441,6 @@ async function summaryStatistics(data) {
 function refreshDashboard(d, dateMin, dateMax) {
   // todo: see if can find way to efficiently find unique songs in range of time
   // todo: serialize with short field names, consider converting all ms to minutes
-  // todo: handle case where storage overflows 5MB.
   let data = structuredClone(d); // avoid modifying computed data
 
   // Get simplified date (date at midnight, equivalently the simple date 'yyyy-mm-dd')
