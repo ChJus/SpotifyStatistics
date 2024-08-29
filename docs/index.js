@@ -140,9 +140,12 @@ async function f(e) {
     await saveData(await serialize(processedData));
   } else if (file.type === "application/zip") {
     let zip = await JSZip.loadAsync(file);
-    let filename = [...Object.values(zip.files)].filter(d => d.name.includes(".json"))[0].name;
-    let text = await zip.file(filename).async("text");
-    readData(text);
+    let filenames = [...Object.values(zip.files)].filter(d => d.name.includes(".json") && d.name.includes("Audio"));
+    let texts = [];
+    for (let i = 0; i < filenames.length; i++) {
+      texts.push(await zip.file(filenames[i].name).async("text"));
+    }
+    readData(texts);
     await summaryStatistics(data);
     await saveData(await serialize(processedData));
   } else {
@@ -157,8 +160,12 @@ async function f(e) {
 
 let USERNAME;
 // Parse data from Spotify
-function readData(text) {
-  data = JSON.parse(text);
+function readData(texts) {
+  data = [];
+  for (let i = 0; i < texts.length; i++) {
+    data.push(...JSON.parse(texts[i]));
+  }
+
   USERNAME = data[0].username;
 
   data = data.filter(d => (d["spotify_track_uri"] !== null) && d["ms_played"] >= 30000);
@@ -194,6 +201,8 @@ function readData(text) {
     delete data[i]["spotify_track_uri"];
     delete data[i]["master_metadata_track_name"];
   }
+
+  data = data.sort((a, b) => (a.endTime - b.endTime));
 }
 
 /*
@@ -350,20 +359,28 @@ async function summaryStatistics(data) {
   document.querySelector("#progress").max = data.length;
   document.querySelector("#popup-progress").max = data.length;
 
+  let totalMsPlayed = 0, totalStreams = 0;
   for (const e of data) {
     let temp = result.songStats.get(e.spotifyID);
     if (temp === undefined) continue;
+    if (temp.duration === 0) temp.duration = 180000; // Default song length to ~ 3 minutes
     temp.msPlayed += e.msPlayed;
     temp.streams += Math.ceil(e.msPlayed / temp.duration);
     temp.streamHistory.push({date: e.endTime, msPlayed: temp.msPlayed, streams: temp.streams});
     delete temp.endTime;
     result.songStats.set(temp.spotifyID, temp);
 
+    // Increase efficiency by caching totals
+    // (instead of constantly converting to array
+    // and finding last element's value)
+    totalMsPlayed += e.msPlayed;
+    totalStreams += Math.ceil(e.msPlayed / temp.duration);
     result.history.set(e.endTime, {
       date: e.endTime,
-      msPlayed: e.msPlayed + [...result.history.values()][result.history.size - 1].msPlayed,
-      streams: Math.ceil(e.msPlayed / temp.duration) + [...result.history.values()][result.history.size - 1].streams
+      msPlayed: totalMsPlayed,
+      streams: totalStreams
     });
+
     let artists = [...temp.artists];
     for (let k = 0; k < artists.length; k++) {
       temp = result.artistStats.get(artists[k]);
@@ -375,7 +392,8 @@ async function summaryStatistics(data) {
       result.artistStats.set(artists[k], temp);
     }
 
-    document.querySelector("#progress").value = ++counter;
+    counter++;
+    document.querySelector("#progress").value = counter;
     document.querySelector("#popup-progress").value = counter;
     document.querySelector("#progress-label").innerText = `Importing stream ${counter} of ${data.length} [${Math.round(100.0 * counter / data.length)}%]`;
     document.querySelector("#popup-progress-label").innerText = `Importing stream ${counter} of ${data.length} [${Math.round(100.0 * counter / data.length)}%]`;
@@ -385,8 +403,8 @@ async function summaryStatistics(data) {
   document.querySelector("#progress").max = Math.ceil(result.songStats.size / 50.0);
   document.querySelector("#popup-progress").max = Math.ceil(result.songStats.size / 50.0);
 
-  let songIDList = Array.from(result.songStats.keys());
-  let songList = Array.from(result.songStats.values());
+  let songIDList = [...result.songStats.keys()];
+  let songList = [...result.songStats.values()];
   for (let i = 0; i < songList.length; i += 50) {
     if (EXCEEDED_REQUEST_LIMIT) {
       break;
@@ -398,6 +416,8 @@ async function summaryStatistics(data) {
     httpGetAsync("https://api.spotify.com/v1/audio-features?ids=" + encodeURIComponent(idList), (t) => {
       let req = JSON.parse(t)["audio_features"];
       for (let j = 0; j < Math.min(songIDList.length - i, 50); j++) {
+        // Ensure we obtain information about track
+        if (!req[j]) continue;
         let track = result.songStats.get(songIDList[i + j]);
         track.acousticness = req[j]["acousticness"];
         track.danceability = req[j]["danceability"];
@@ -486,7 +506,9 @@ function refreshDashboard(d, dateMin, dateMax) {
         counts[j]++;
       }
     }
-    bpmTotal += song.tempo;
+    bpmTotal += song.tempo ? song.tempo : 0;
+    // add 0 instead of null, note this reduces accuracy of average
+    // but on the whole not much effect (esp. if there are a lot of tracks).
   }
 
   document.querySelector("#overview-stats #overview-acousticness").innerText = `${(counts[0] / songCount * 100).toFixed(0)}%`;

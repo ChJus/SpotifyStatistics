@@ -347,13 +347,25 @@ function refreshOverallStreamsGraph(data, min, max) {
     });
   }
 
+  // Gets index of last date before or on a given date
   function getLast(data, date) {
-    for (let i = 0; i < data.length; i++) {
-      if (new Date(date) - new Date(data[i].date) < 0) {
-        return i - 1;
-      }
+    let result = search(data, 0, data.length - 1, date);
+    return result === -1 ? 0 : result;
+  }
+
+  // https://stackoverflow.com/questions/29196755/
+  function search(data, start, end, date) {
+    if (start === end) {
+      return new Date(data[start].date) <= date ? start : -1;
     }
-    return data.length - 1;
+
+    let mid = start + Math.floor((end - start) / 2);
+    if (date < new Date(data[mid].date)) {
+      return search(data, start, mid, date);
+    }
+
+    let ret = search(data, mid + 1, end, date);
+    return ret === -1 ? mid : ret;
   }
 
   // Graph margins
@@ -539,9 +551,11 @@ function refreshGenreAnalysisGraph(data) {
   let svg = d3.select("#oneD-song-genre-force");
   let graphic = d3.select("#oneD-song-genre-force #visual");
 
+  let maxStreams = d3.max(data, d => d.streams);
+
   let nodes = d3.range(numNodes).map(function (d, i) {
     return {
-      radius: Math.sqrt(data[i].streams) + 7,
+      radius: (data[i].streams / maxStreams) * 20 + 7,
       value: data[i][attr],
       index: i,
       image: data[i].image !== null ? data[i].image : ''
@@ -1124,13 +1138,25 @@ export function refreshPopupGraphs(type, data, id) {
     });
   }
 
+  // Gets index of last date before or on a given date
   function getLast(data, date) {
-    for (let i = 0; i < data.length; i++) {
-      if (new Date(date) - new Date(data[i].date) < 0) {
-        return i - 1;
-      }
+    let result = search(data, 0, data.length - 1, date);
+    return result === -1 ? 0 : result;
+  }
+
+  // https://stackoverflow.com/questions/29196755/
+  function search(data, start, end, date) {
+    if (start === end) {
+      return new Date(data[start].date) <= date ? start : -1;
     }
-    return data.length - 1;
+
+    let mid = start + Math.floor((end - start) / 2);
+    if (date < new Date(data[mid].date)) {
+      return search(data, start, mid, date);
+    }
+
+    let ret = search(data, mid + 1, end, date);
+    return ret === -1 ? mid : ret;
   }
 
   // Graph margins
