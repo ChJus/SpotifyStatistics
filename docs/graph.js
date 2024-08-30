@@ -555,7 +555,7 @@ function refreshGenreAnalysisGraph(data) {
 
   let nodes = d3.range(numNodes).map(function (d, i) {
     return {
-      radius: (data[i].streams / maxStreams) * 20 + 7,
+      radius: (data[i].streams / maxStreams) * 20 + 10,
       value: data[i][attr],
       index: i,
       image: data[i].image !== null ? data[i].image : ''
