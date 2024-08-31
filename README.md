@@ -9,9 +9,14 @@ Analyze your Spotify listening data from [Spotify](https://www.spotify.com/us/ac
 
 ## Privacy
 
-All code is open-source and publicly available. The webpage is statically hosted on Github. All data is cached on the
-client-side,
-no data is saved on the server.
+### Spotify Data
+
+All code is open-source and publicly available. The webpage is statically hosted on Github. All Spotify data is cached on the
+client-side, no listening data is saved on the server.
+
+### Analytics
+
+Website analytics (solely tracking view count) are enabled, intended only to serve as measurement of traffic to site. 
 
 ## Screenshots
 ![](example/1.png)
