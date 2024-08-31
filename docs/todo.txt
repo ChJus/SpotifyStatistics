@@ -22,5 +22,4 @@ Enhancements
 ❌ Home/landing page that gives instructions for users
 
 Bugs
-❌ Streams is '-1' for second day on graph of streams over time (overall and track-specific)
 ❌ Progress bar sometimes goes over count

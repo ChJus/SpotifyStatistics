@@ -296,8 +296,8 @@ function refreshOverallStreamsGraph(data, min, max) {
 
   let dataset = [{
     date: new Date(approximateDate(new Date(eDay))),
-    streams: d[getLast(d, eDay) + 1].streams,
-    msPlayed: d[getLast(d, eDay) + 1].msPlayed
+    streams: d[getLast(d, eDay)].streams,
+    msPlayed: d[getLast(d, eDay)].msPlayed
   }];
   for (let i = 0; i < Math.round((new Date(max) - new Date(min)) / 24.0 / 3600.0 / 1000.0) - 1; i++) {
     let sd = new Date(min);
@@ -1088,8 +1088,8 @@ export function refreshPopupGraphs(type, data, id) {
 
   let dataset = [{
     date: new Date(approximateDate(new Date(eDay))),
-    streams: d[getLast(d, eDay) + 1].streams,
-    msPlayed: d[getLast(d, eDay) + 1].msPlayed
+    streams: d[getLast(d, eDay)].streams,
+    msPlayed: d[getLast(d, eDay)].msPlayed
   }];
   for (let i = 0; i < Math.round((new Date(max) - new Date(min)) / 24.0 / 3600.0 / 1000.0) - 1; i++) {
     let sd = new Date(min);
