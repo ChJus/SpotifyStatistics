@@ -262,7 +262,6 @@ async function summaryStatistics(data) {
     }
   }
 
-  let counter = 0;
   document.querySelector("#progress").max = result.songStats.size;
   document.querySelector("#popup-progress").max = result.songStats.size;
 
@@ -314,18 +313,16 @@ async function summaryStatistics(data) {
         }
         delete track.artistName;
         result.songStats.set(track.spotifyID, track);
-
-        document.querySelector("#progress").value = ++counter;
-        document.querySelector("#popup-progress").value = counter;
-        document.querySelector("#progress-label").innerText = `Importing track ${counter} of ${result.songStats.size} [${Math.round(100.0 * counter / result.songStats.size)}%]`;
-        document.querySelector("#popup-progress-label").innerText = `Importing track ${counter} of ${result.songStats.size} [${Math.round(100.0 * counter / result.songStats.size)}%]`;
       }
     });
 
+    document.querySelector("#progress").value = Math.min(i + 50, slist.length);
+    document.querySelector("#popup-progress").value = Math.min(i + 50, slist.length);
+    document.querySelector("#progress-label").innerText = `Importing track ${Math.min(i + 50, slist.length)} of ${result.songStats.size} [${Math.round(100.0 * Math.min(i + 50, slist.length) / result.songStats.size)}%]`;
+    document.querySelector("#popup-progress-label").innerText = `Importing track ${Math.min(i + 50, slist.length)} of ${result.songStats.size} [${Math.round(100.0 * Math.min(i + 50, slist.length) / result.songStats.size)}%]`;
     await sleep(1000 / QUERY_RATE_PER_SECOND);
   }
 
-  counter = 0;
   document.querySelector("#progress").max = result.artistStats.size;
   document.querySelector("#popup-progress").max = result.artistStats.size;
 
@@ -343,24 +340,22 @@ async function summaryStatistics(data) {
       let req = JSON.parse(t)["artists"];
       for (let j = 0; j < Math.min(aid.length - i, 50); j++) {
         result.artistStats.get(aid[i + j]).image = (req[j]["images"] && req[j]["images"].length > 0) ? req[j]["images"][0]["url"] : null;
-
-        document.querySelector("#progress").value = ++counter;
-        document.querySelector("#popup-progress").value = counter;
-        document.querySelector("#progress-label").innerText = `Importing artist ${counter} of ${result.artistStats.size} [${Math.round(100.0 * counter / result.artistStats.size)}%]`;
-        document.querySelector("#popup-progress-label").innerText = `Importing artist ${counter} of ${result.artistStats.size} [${Math.round(100.0 * counter / result.artistStats.size)}%]`;
       }
     });
 
     await sleep(1000 / QUERY_RATE_PER_SECOND);
+    document.querySelector("#progress").value = Math.min(i + 50, alist.length);
+    document.querySelector("#popup-progress").value = Math.min(i + 50, alist.length);
+    document.querySelector("#progress-label").innerText = `Importing artist ${Math.min(i + 50, alist.length)} of ${alist.length} [${Math.round(100.0 * Math.min(i + 50, alist.length) / alist.length)}%]`;
+    document.querySelector("#popup-progress-label").innerText = `Importing artist ${Math.min(i + 50, alist.length)} of ${alist.length} [${Math.round(100.0 * Math.min(i + 50, alist.length) / alist.length)}%]`;
   }
 
-
-  counter = 0;
   document.querySelector("#progress").max = data.length;
   document.querySelector("#popup-progress").max = data.length;
 
   let totalMsPlayed = 0, totalStreams = 0;
-  for (const e of data) {
+  for (let i = 0; i < data.length; i++) {
+    let e = data[i];
     let temp = result.songStats.get(e.spotifyID);
     if (temp === undefined) continue;
     if (temp.duration === 0) temp.duration = 180000; // Default song length to ~ 3 minutes
@@ -392,19 +387,19 @@ async function summaryStatistics(data) {
       result.artistStats.set(artists[k], temp);
     }
 
-    counter++;
-    document.querySelector("#progress").value = counter;
-    document.querySelector("#popup-progress").value = counter;
-    document.querySelector("#progress-label").innerText = `Importing stream ${counter} of ${data.length} [${Math.round(100.0 * counter / data.length)}%]`;
-    document.querySelector("#popup-progress-label").innerText = `Importing stream ${counter} of ${data.length} [${Math.round(100.0 * counter / data.length)}%]`;
+    document.querySelector("#progress").value = i + 1;
+    document.querySelector("#popup-progress").value = i + 1;
+    document.querySelector("#progress-label").innerText = `Importing stream ${i + 1} of ${data.length} [${Math.round(100.0 * (i + 1) / data.length)}%]`;
+    document.querySelector("#popup-progress-label").innerText = `Importing stream ${i + 1} of ${data.length} [${Math.round(100.0 * (i + 1) / data.length)}%]`;
+    if (i % 1000 === 0) {
+      await sleep(30);
+    }
   }
-
-  counter = 0;
-  document.querySelector("#progress").max = Math.ceil(result.songStats.size / 50.0);
-  document.querySelector("#popup-progress").max = Math.ceil(result.songStats.size / 50.0);
 
   let songIDList = [...result.songStats.keys()];
   let songList = [...result.songStats.values()];
+  document.querySelector("#progress").max = songList.length;
+  document.querySelector("#popup-progress").max = songList.length;
   for (let i = 0; i < songList.length; i += 50) {
     if (EXCEEDED_REQUEST_LIMIT) {
       break;
@@ -431,11 +426,12 @@ async function summaryStatistics(data) {
         result.songStats.set(track.spotifyID, track);
       }
     });
-    document.querySelector("#progress").value = ++counter;
-    document.querySelector("#popup-progress").value = counter;
-    document.querySelector("#progress-label").innerText = `Importing song characteristics ${counter} of ${Math.ceil(result.songStats.size / 50.0)} [${Math.round(100.0 * counter / Math.ceil(result.songStats.size / 50.0))}%]`;
-    document.querySelector("#popup-progress-label").innerText = `Importing song characteristics ${counter} of ${Math.ceil(result.songStats.size / 50.0)} [${Math.round(100.0 * counter / Math.ceil(result.songStats.size / 50.0))}%]`;
+
     await sleep(1000 / QUERY_RATE_PER_SECOND);
+    document.querySelector("#progress").value = Math.min(i + 50, songList.length);
+    document.querySelector("#popup-progress").value = Math.min(i + 50, songList.length);
+    document.querySelector("#progress-label").innerText = `Importing song characteristics ${Math.min(i + 50, songList.length)} of ${songList.length} [${Math.round(100.0 * Math.min(i + 50, songList.length) / songList.length)}%]`;
+    document.querySelector("#popup-progress-label").innerText = `Importing song characteristics ${Math.min(i + 50, songList.length)} of ${songList.length} [${Math.round(100.0 * Math.min(i + 50, songList.length) / songList.length)}%]`;
   }
 
   // Other useful information

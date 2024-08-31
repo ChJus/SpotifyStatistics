@@ -20,6 +20,6 @@ Enhancements
 ❌ Link username to user profile on Spotify
 ❌ Force-directed graph reduce collision frequency
 ❌ Home/landing page that gives instructions for users
+❌ Add a loading screen when loading from indexedDB cache
 
 Bugs
-❌ Progress bar sometimes goes over count
