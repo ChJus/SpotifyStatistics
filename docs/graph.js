@@ -34,7 +34,6 @@ export function refreshGraphs(data, min, max) {
 }
 
 function refreshCalendarGraph(data) {
-  data = structuredClone(data);
   let dataYear = document.querySelector("#calendar-year").value, factor = document.querySelector("#calendar-factor").value;
   let [startYear, endYear] = d3.extent([...data.history.values()], d => new Date(d.date).getFullYear());
 
@@ -287,7 +286,10 @@ function refreshCalendarGraph(data) {
 }
 
 function refreshOverallStreamsGraph(data, min, max) {
-  let d = structuredClone([...data.history.values()]);
+  // Removed structuredClone (acts as safety to prevent modifying original data).
+  // to improve efficiency. Object.freeze() acts to make sure we don't modify.
+  let d = [...data.history.values()];
+  Object.freeze(d);
   let dates = [...new Set(d.map(d => approximateDate(new Date(d.date))))]
   let eDay = new Date(min);
   eDay.setDate(eDay.getDate() - 1);
@@ -523,8 +525,9 @@ function refreshOverallStreamsGraph(data, min, max) {
 }
 
 function refreshGenreAnalysisGraph(data) {
-  let originalData = structuredClone(data);
-  data = [...data.songStats.values()];
+  let originalData = data;
+  Object.freeze(originalData);
+  data = structuredClone([...data.songStats.values()]);
   data.sort(function (a, b) {
     return b.streams - a.streams
   })
@@ -680,7 +683,6 @@ function refreshGenreAnalysisGraph(data) {
     let artists = [];
     for (let id of [...data[d.index].artists]) artists.push(originalData.artistStats.get(id).name)
 
-
     tooltip.style.display = "inline-block";
     d3.select("#oneD-song-genre-force-tooltip").transition().duration(100).style("opacity", 1)
     tooltip.style.position = "absolute";
@@ -719,7 +721,8 @@ function refreshGenreAnalysisGraph(data) {
 }
 
 function refreshTimeOfDayGraph(data, min, max) {
-  let d = structuredClone([...data.history.values()]);
+  let d = [...data.history.values()];
+  Object.freeze(d);
   let dat = new Array(24).fill(0);
   for (let i = 0; i < d.length; i++) {
     if (new Date(d[i].date) - new Date(min) < 0) {
@@ -891,7 +894,8 @@ function refreshTimeOfDayGraph(data, min, max) {
 }
 
 function refreshDayOfWeekGraph(data, min, max) {
-  let d = structuredClone([...data.history.values()]);
+  let d = [...data.history.values()];
+  Object.freeze(d);
   let dat = new Array(7).fill(0);
   for (let i = 0; i < d.length; i++) {
     if (new Date(d[i].date) - new Date(min) < 0) {

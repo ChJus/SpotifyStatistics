@@ -461,7 +461,8 @@ async function summaryStatistics(data) {
 function refreshDashboard(d, dateMin, dateMax) {
   // todo: see if can find way to efficiently find unique songs in range of time
   // todo: serialize with short field names, consider converting all ms to minutes
-  let data = structuredClone(d); // avoid modifying computed data
+  let data = d; // avoid modifying computed data; note: should not change, if does, revert back to structuredClone of d.
+  Object.freeze(data);
 
   // Get simplified date (date at midnight, equivalently the simple date 'yyyy-mm-dd')
   let min = new Date(approximateDate(new Date(dateMin))), max = new Date(approximateDate(new Date(dateMax)));
@@ -571,7 +572,8 @@ function refreshDashboard(d, dateMin, dateMax) {
   }
 }
 
-// Get streaming statistics in a time range (as info is stored cumulatively)
+/*
+Old, slower function:
 function getStreamStats(item, property, min, max)  {
   let i = item.streamHistory.findIndex((d) => {
     return (new Date(d.date) - new Date(max) <= 0) && (new Date(d.date) - new Date(min) >= 0)
@@ -583,6 +585,53 @@ function getStreamStats(item, property, min, max)  {
   let a = j >= 0 ? item.streamHistory[j][property] : 0;
   let b = i >= 0 ? item.streamHistory[i][property] : 0;
   return a - b;
+}
+*/
+
+// Get streaming statistics in a time range (as info is stored cumulatively)
+function getStreamStats(item, property, min, max)  {
+  let i = getStart(item.streamHistory, new Date(min)) - 1;
+  let j = getEnd(item.streamHistory, new Date(max));
+
+  let a = j >= 0 ? item.streamHistory[j][property] : 0;
+  let b = i >= 0 ? item.streamHistory[i][property] : 0;
+  return a - b;
+}
+
+// https://stackoverflow.com/questions/6553970
+// Gets the index of the first date in an array that is on or after a given date
+function getStart(data, date) {
+  let low = 0, high = data.length;
+  while (low !== high) {
+    let mid = Math.floor((low + high) / 2);
+    if (new Date(data[mid].date) < date) {
+      // This index, and everything below it, must not be the first element
+      // greater than what we're looking for because this element is no greater
+      // than the element.
+      low = mid + 1;
+    } else {
+      // This element is at least as large as the element, so anything after it can't
+      // be the first element that's at least as large.
+      high = mid;
+    }
+  }
+  return low === -1 ? 0 : low;
+}
+
+// Gets the index of the last date in an array that is before or on a given date
+function getEnd(data, date) {
+  let low = 0, high = data.length;
+  while (low !== high) {
+    let mid = Math.floor((low + high) / 2);
+    if (new Date(data[mid].date) === date) {
+      return mid;
+    } else if (new Date(data[mid].date) >= date) {
+      high = mid;
+    } else {
+      low = mid + 1;
+    }
+  }
+  return low === -1 ? data.length - 1 : low - 1;
 }
 
 // History (go back) functionality
@@ -770,20 +819,71 @@ function commafy(x) {
   return x.toString().replace(/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/g, ",");
 }
 
-// Gets the index of the first date in an array that is earlier than a given date
+/*
+Old function (time consuming):
 function getEarlierDate(arr, date) {
   let i = arr.findIndex((d) => {
     return new Date(d) - new Date(date) >= 0
   });
+  console.log(i, getEarlierDate2(arr, date) );
   return i >= 0 ? i : 0;
 }
+*/
 
-// Gets the index of the first date in an array that is later than a given date
+// https://stackoverflow.com/questions/6553970
+// Gets the index of the first date in an array that is earlier than or on a given date
+function getEarlierDate(data, date) {
+  let low = 0, high = data.length;
+  while (low != high) {
+    let mid = Math.floor((low + high) / 2);
+    if (new Date(data[mid]) < date) {
+      // This index, and everything below it, must not be the first element
+      // greater than what we're looking for because this element is no greater
+      // than the element.
+      low = mid + 1;
+    } else {
+      // This element is at least as large as the element, so anything after it can't
+      // be the first element that's at least as large.
+      high = mid;
+    }
+  }
+  return low === -1 ? 0 : low;
+}
+
+/*
+Old function (time consuming):
 function getLaterDate(arr, date) {
   let index = arr.findLastIndex((d) => {
     return new Date(d) - new Date(date) <= 0
   });
   return index >= 0 ? index : arr.length - 1;
+}
+*/
+
+// Gets the index of the first date in an array that is later than a given date
+function getLaterDate(data, date) {
+  // Find index of the last date in the array that is on or before the given date
+  let result = searchLater(data, 0, data.length - 1, new Date(date));
+
+  // If cannot find such index, return something that will result in error (for debugging)
+  // Otherwise return the index after, which represents the index of the first date in the array
+  // that is later than the given date.
+  return result === -1 ? data.length - 1 : result + 1;
+}
+
+// https://stackoverflow.com/questions/29196755/
+function searchLater(data, start, end, date) {
+  if (start === end) {
+    return new Date(data[start].date) <= date ? start : -1;
+  }
+
+  let mid = start + Math.floor((end - start) / 2);
+  if (date < new Date(data[mid].date)) {
+    return searchLater(data, start, mid, date);
+  }
+
+  let ret = searchLater(data, mid + 1, end, date);
+  return ret === -1 ? mid : ret;
 }
 
 // Returns simplified string representation of date (yyyy-mm-dd)
