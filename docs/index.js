@@ -109,6 +109,7 @@ window.addEventListener('unhandledrejection', event => alert("Error: " + event.r
 
 // Check if there is data cached in indexedDB
 if ((await db.get("data", "data"))) {
+  document.querySelector("#popup-container #loading").style.display = "block";
   processedData = await deserialize(await getData());
   refreshDashboard(processedData, processedData.startDate, processedData.endDate);
   document.querySelector("#popup-container").style.display = "none";

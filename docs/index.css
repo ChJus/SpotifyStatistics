@@ -46,6 +46,13 @@ body {
     display: block;
     width: fit-content;
     height: fit-content;
+
+    #loading {
+      text-align: center;
+      margin: 30px;
+      padding: 10px 20px;
+      display: none;
+    }
   }
 
   #popup-icon {

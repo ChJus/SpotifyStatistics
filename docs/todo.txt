@@ -1,11 +1,14 @@
 Features
 ❌ Two-factor force-directed graph with customizable axes (selectable factors: streams, valence, acousticness, etc.).
-❌ 'Hot' list – table of songs/artists by peak streams in a day/week/month (allow selection); show all track streams over time on single graph
 ❌ Quiz (5-second snippets and make user guess song name)
 ❌ Allow album categorization and add genre metadata to songs and artists
-❌ Graph of song valence/energy (selectable) by time of day
 ❌ Suggest songs to listen to?
 ❌ Show playlists and contents
+❌ Search for statistics of song/artist
+
+❌ Graph of song valence/energy (selectable) by time of day
+❌ Graph of cumulative streams/stream-time
+❌ 'Hot' list – table of songs/artists by peak streams in a day/week/month (allow selection); show all track streams over time on single graph
 ❌ Custom time range selection and more temporal updates to data displays
 ❌ Have popup for calendar and overall graphs (e.g., display songs contributing to data point)
 
@@ -17,6 +20,7 @@ Enhancements
 ❌ Reduce code redundancy and improve code modularity, maintainability
 ❌ Improve code performance and memory usage
 ❌ Add artists as linked sub-text to song listings
+
 ❌ Link username to user profile on Spotify
 ❌ Force-directed graph reduce collision frequency
 ❌ Home/landing page that gives instructions for users
