@@ -473,13 +473,13 @@ function refreshDashboard(d, dateMin, dateMax) {
   born.setDate(born.getDate() - data.accountAge + 1);
   upTo.setDate(upTo.getDate() - 1)
 
-  document.querySelector("#profile-right #name").innerText = data.username;
-
-  if (data.userImage) {
+  if (data.username !== 'undefined') {
+    document.querySelector("#profile-right #name").innerText = data.username;
     document.querySelector("#profile-left img").src = data.userImage;
     document.querySelector("#profile-left").style.display = "block";
   } else {
     document.querySelector("#profile-left").style.display = "none";
+    document.querySelector("#profile-right #name").innerText = "Profile";
   }
 
   document.querySelector("#profile-right #lifespan").innerText = born.toLocaleDateString("en-US", dateFormat) + " — " + upTo.toLocaleDateString("en-US", dateFormat);
