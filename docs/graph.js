@@ -16,10 +16,12 @@ document.querySelector("#overall-graphs-group-preference").onchange = () => {
   refreshOverallStreamsGraph(INDEX.processedData, sd, ed);
 }
 
+/* DEPRECATED
 document.querySelector("#oneD-song-genre-factor").onchange = () => {
   let [sd, ed] = INDEX.getDateRange();
   refreshGenreAnalysisGraph(INDEX.processedData, sd, ed);
 }
+ */
 
 document.querySelector("#calendar-factor").onchange = () => refreshCalendarGraph(INDEX.processedData);
 document.querySelector("#calendar-year").onchange = () => refreshCalendarGraph(INDEX.processedData);
@@ -30,7 +32,9 @@ export function refreshGraphs(data, min, max) {
   refreshTimeOfDayGraph(data, min, max);
   refreshDayOfWeekGraph(data, min, max);
   refreshCalendarGraph(data);
+  /* DEPRECATED
   refreshGenreAnalysisGraph(data);
+   */
 }
 
 function refreshCalendarGraph(data) {

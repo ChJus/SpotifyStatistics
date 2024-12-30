@@ -401,6 +401,9 @@ async function summaryStatistics(data) {
   let songList = [...result.songStats.values()];
   document.querySelector("#progress").max = songList.length;
   document.querySelector("#popup-progress").max = songList.length;
+
+  /* DEPRECATED — Spotify deprecated / removed access to audio-features API (as of Nov 27. 2024)
+
   for (let i = 0; i < songList.length; i += 50) {
     if (EXCEEDED_REQUEST_LIMIT) {
       break;
@@ -434,6 +437,8 @@ async function summaryStatistics(data) {
     document.querySelector("#progress-label").innerText = `Importing song characteristics ${Math.min(i + 50, songList.length)} of ${songList.length} [${Math.round(100.0 * Math.min(i + 50, songList.length) / songList.length)}%]`;
     document.querySelector("#popup-progress-label").innerText = `Importing song characteristics ${Math.min(i + 50, songList.length)} of ${songList.length} [${Math.round(100.0 * Math.min(i + 50, songList.length) / songList.length)}%]`;
   }
+
+   */
 
   // Other useful information
   result.activeDays = new Set(data.map(d => approximateDate(d.endTime)));
@@ -492,6 +497,8 @@ function refreshDashboard(d, dateMin, dateMax) {
   document.querySelector("#overall #overall-days").innerText = `${commafy(getLaterDate([...data.activeDays], max) - getEarlierDate([...data.activeDays], min))} / ${commafy(Math.min(data.accountAge, Math.round((max - min) / (1000.0 * 3600.0 * 24.0))))}`;
   document.querySelector("#overall #overall-avg-session").innerText = `${commafy(Math.ceil(parseFloat(document.querySelector("#overall #overall-minutes").innerText.replaceAll(",", "")) / (getLaterDate([...data.activeDays], max) - getEarlierDate([...data.activeDays], min))))}`;
 
+  /* DEPRECATED (Spotify API Deprecation)
+
   // Display song overview characteristics
   let songCount = data.songStats.size;
   let attr = ["acousticness", "danceability", "speechiness", "energy", "valence"];
@@ -522,6 +529,7 @@ function refreshDashboard(d, dateMin, dateMax) {
   document.querySelector("#overview-stats #overview-energy").parentNode.style.opacity = `${0.6 + (counts[3] / songCount) * 0.4}`;
   document.querySelector("#overview-stats #overview-valence").parentNode.style.opacity = `${0.6 + (counts[4] / songCount) * 0.4}`;
 
+  */
 
   // Check on graphs (may update range and/or data)
   GRAPH.refreshGraphs(data, min, max);
@@ -734,6 +742,8 @@ export function moreInfo(type, data, id) {
     document.querySelector("#popup-song-left-image-wrapper img").src = `${song.image ? song.image : ''}`;
     document.querySelector("#popup-song-name").innerText = `${song.trackName}`;
     document.querySelector("#popup-song-stats").innerText = `${commafy(Math.round(getStreamStats(song, "msPlayed", data.startDate, data.endDate) / 1000.0 / 60.0))} minutes | ${commafy(getStreamStats(song, "streams", data.startDate, data.endDate))} streams`;
+
+    /* Spotify API DEPRECATED
     document.querySelector("#song-acousticness").innerText = `${song.acousticness}`;
     document.querySelector("#song-danceability").innerText = `${song.danceability}`;
     document.querySelector("#song-energy").innerText = `${song.energy}`;
@@ -767,6 +777,8 @@ export function moreInfo(type, data, id) {
     document.querySelector("#song-acousticness").parentNode.style.opacity = `${0.6 + song.acousticness * 0.4}`;
     document.querySelector("#song-danceability").parentNode.style.opacity = `${0.6 + song.danceability * 0.4}`;
     document.querySelector("#song-speechiness").parentNode.style.opacity = `${0.6 + song.speechiness * 0.4}`;
+
+     */
   }
 
   // Update graphs in popup
